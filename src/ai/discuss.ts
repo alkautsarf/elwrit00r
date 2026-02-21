@@ -5,8 +5,6 @@ export class DiscussSession {
   private sessionId: string | null = null;
   private abortController: AbortController | null = null;
 
-  constructor(private mode: "discuss" | "unstuck" = "discuss") {}
-
   async sendMessage(
     userMessage: string,
     onChunk: (text: string) => void,
@@ -16,27 +14,24 @@ export class DiscussSession {
     this.abort();
     this.abortController = new AbortController();
 
-    const prompt =
-      this.mode === "unstuck" && editorContent
-        ? `Here's what I've written so far:\n\n---\n${editorContent}\n---\n\n${userMessage}`
-        : userMessage;
+    const prompt = editorContent?.trim()
+      ? `Here's what I've written so far:\n\n---\n${editorContent}\n---\n\n${userMessage}`
+      : userMessage;
 
     try {
       if (this.sessionId) {
-        // Continue existing conversation
         const result = await resumeQuery({
           prompt,
-          systemPrompt: PROMPTS[this.mode === "unstuck" ? "unstuck" : "discuss"],
+          systemPrompt: PROMPTS.discuss,
           sessionId: this.sessionId,
           onChunk,
           abortController: this.abortController,
         });
         return result.fullText;
       } else {
-        // Start new conversation
         const result = await streamQuery({
           prompt,
-          systemPrompt: PROMPTS[this.mode === "unstuck" ? "unstuck" : "discuss"],
+          systemPrompt: PROMPTS.discuss,
           onChunk,
           persist: true,
           abortController: this.abortController,

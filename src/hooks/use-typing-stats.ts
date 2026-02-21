@@ -4,16 +4,14 @@ import type { VimMode } from "./use-vim-mode";
 export function useTypingStats(mode: VimMode, activePane: "editor" | "ai") {
   const [wordCount, setWordCount] = useState(0);
   const [wpm, setWpm] = useState(0);
-  const [accuracy, setAccuracy] = useState(100);
   const [elapsed, setElapsed] = useState("0:00");
 
   // Accumulated typing time (only counts Insert mode)
   const accumulatedMs = useRef(0);
   const insertEnteredAt = useRef<number | null>(null);
 
-  // Keystroke tracking for WPM and accuracy
+  // Keystroke tracking for WPM
   const typedChars = useRef(0);
-  const errorCount = useRef(0);
 
   // Track insert mode enter/exit to accumulate time (editor only)
   const isEditorInsert = mode === "insert" && activePane === "editor";
@@ -55,17 +53,10 @@ export function useTypingStats(mode: VimMode, activePane: "editor" | "ai") {
   }, []);
 
   const recordKeystroke = useCallback((isError: boolean) => {
-    if (isError) {
-      errorCount.current++;
-    } else {
+    if (!isError) {
       typedChars.current++;
-    }
-
-    const total = typedChars.current + errorCount.current;
-    if (total > 0) {
-      setAccuracy(Math.round((typedChars.current / total) * 100));
     }
   }, []);
 
-  return { wordCount, wpm, accuracy, elapsed, updateContent, recordKeystroke };
+  return { wordCount, wpm, elapsed, updateContent, recordKeystroke };
 }

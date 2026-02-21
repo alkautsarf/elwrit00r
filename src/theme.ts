@@ -12,7 +12,6 @@ export const theme = {
   yellow: "#ecc48d",
   orange: "#f78c6c",
   red: "#ef5350",
-  magenta: "#c792ea",
   purple: "#c792ea",
 
   // UI

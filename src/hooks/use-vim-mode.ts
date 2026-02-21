@@ -3,14 +3,20 @@ import { useKeyboard } from "@opentui/react";
 import type { TextareaRenderable } from "@opentui/core";
 
 export type VimMode = "normal" | "insert" | "visual";
-export type AiCommand = "discuss" | "unstuck" | "review" | "polish";
+export type AiCommand = "discuss" | "review" | "polish";
 
 interface UseVimModeOptions {
   textareaRef: RefObject<TextareaRenderable | null>;
   onCommand: (command: AiCommand, selectedText?: string) => void;
   onReset: () => void;
   onQuit: () => void;
+  onBrowse: () => void;
+  onNewSession: () => void;
   onPaneSwitch: () => void;
+  onToggleSidebar: () => void;
+  onTitleFocus: () => void;
+  onTitleBlur: () => void;
+  titleFocused: boolean;
 }
 
 export function useVimMode({
@@ -18,7 +24,13 @@ export function useVimMode({
   onCommand,
   onReset,
   onQuit,
+  onBrowse,
+  onNewSession,
   onPaneSwitch,
+  onToggleSidebar,
+  onTitleFocus,
+  onTitleBlur,
+  titleFocused,
 }: UseVimModeOptions) {
   const [mode, setMode] = useState<VimMode>("normal");
   const yankRegister = useRef<string>("");
@@ -44,6 +56,37 @@ export function useVimMode({
   }, []);
 
   useKeyboard((key) => {
+    // Title input is focused — respect vim modes
+    if (titleFocused) {
+      if (mode === "normal") {
+        key.preventDefault();
+        switch (key.name) {
+          case "j":
+          case "return":
+            onTitleBlur();
+            break;
+          case "i":
+          case "a":
+            enterInsert();
+            break;
+          case "escape":
+            onTitleBlur();
+            enterNormal();
+            break;
+          case "q":
+            onQuit();
+            break;
+        }
+      } else if (mode === "insert") {
+        if (key.name === "escape") {
+          key.preventDefault();
+          enterNormal();
+        }
+        // All other keys pass through to the title input
+      }
+      return;
+    }
+
     if (mode === "normal") {
       key.preventDefault();
       const ta = textareaRef.current;
@@ -55,9 +98,10 @@ export function useVimMode({
         pendingKey.current = null;
         switch (key.name) {
           case "d": onCommand("discuss"); break;
-          case "u": onCommand("unstuck"); break;
           case "r": onCommand("review"); break;
           case "p": onCommand("polish"); break;
+          case "n": onNewSession(); break;
+          case "b": onBrowse(); break;
         }
         return;
       }
@@ -74,7 +118,7 @@ export function useVimMode({
         pendingKey.current = null;
         switch (key.name) {
           case "d": ta?.deleteLine(); break;
-          case "w": ta?.deleteWordForward(); break;
+          case "w":
           case "e": ta?.deleteWordForward(); break;
           case "b": ta?.deleteWordBackward(); break;
           case "$": ta?.deleteToLineEnd(); break;
@@ -102,8 +146,14 @@ export function useVimMode({
         case "h": ta?.moveCursorLeft(); break;
         case "l": ta?.moveCursorRight(); break;
         case "j": ta?.moveCursorDown(); break;
-        case "k": ta?.moveCursorUp(); break;
-        case "w": ta?.moveWordForward(); break;
+        case "k":
+          if (ta && ta.logicalCursor.row === 0) {
+            onTitleFocus();
+          } else {
+            ta?.moveCursorUp();
+          }
+          break;
+        case "w":
         case "e": ta?.moveWordForward(); break;
         case "b": ta?.moveWordBackward(); break;
         case "0": ta?.gotoLineHome(); break;
@@ -168,6 +218,11 @@ export function useVimMode({
           if (key.ctrl) ta?.redo(); // Ctrl+R
           break;
 
+        // Sidebar toggle
+        case "b":
+          if (key.ctrl) onToggleSidebar(); // Ctrl+B
+          break;
+
         // Visual mode
         case "v": enterVisual(); break;
 
@@ -181,6 +236,11 @@ export function useVimMode({
 
         // Space leader → AI commands
         case "space": pendingKey.current = "space"; break;
+
+        // Title focus (T = Shift+t)
+        case "t":
+          if (key.shift) onTitleFocus();
+          break;
 
         // Pane switch
         case "tab": onPaneSwitch(); break;
@@ -276,5 +336,5 @@ export function useVimMode({
     }
   });
 
-  return { mode };
+  return { mode, pendingKey };
 }

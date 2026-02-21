@@ -1,2 +1,6 @@
 node_modules/
 dist/
+bun.lock
+elwrit00r
+.env
+.env.*

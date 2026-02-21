@@ -12,5 +12,8 @@
     "@opentui/core": "latest",
     "@opentui/react": "latest",
     "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "bun-types": "^1.3.9"
   }
 }

@@ -1,4 +1,5 @@
 import { theme } from "../theme";
+import { getMarkdownStyle } from "../lib/markdown-style";
 
 interface OutputViewProps {
   label: string;
@@ -16,10 +17,16 @@ export function OutputView({ label, content, isStreaming }: OutputViewProps) {
       >
         <box style={{ padding: 1 }}>
           {content ? (
-            <text fg={theme.fg}>{content}</text>
+            <markdown
+              content={content}
+              syntaxStyle={getMarkdownStyle()}
+              streaming={isStreaming}
+              conceal
+              style={{ width: "100%" }}
+            />
           ) : (
             <text fg={theme.fgFaint}>
-              {isStreaming ? `${label}...` : `Press i to trigger ${label.toLowerCase()}`}
+              {isStreaming ? `${label}...` : `Waiting for content...`}
             </text>
           )}
         </box>

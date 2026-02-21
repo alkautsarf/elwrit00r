@@ -1,24 +1,43 @@
-import React, { useEffect, type RefObject } from "react";
-import type { TextareaRenderable } from "@opentui/core";
+import { useEffect, type RefObject } from "react";
+import type { TextareaRenderable, InputRenderable } from "@opentui/core";
 import { useTerminalDimensions } from "@opentui/react";
 
 interface EditorProps {
   textareaRef: RefObject<TextareaRenderable | null>;
+  titleInputRef: RefObject<InputRenderable | null>;
   inputFocused: boolean;
+  titleFocused: boolean;
   fullWidth: boolean;
+  title: string;
+  onTitleChange?: (text: string) => void;
+  onTitleBlur?: () => void;
   onContentChange?: (text: string) => void;
   onKeystroke?: (isError: boolean) => void;
 }
 
-export function Editor({ textareaRef, inputFocused, fullWidth, onContentChange, onKeystroke }: EditorProps) {
+export function Editor({
+  textareaRef,
+  titleInputRef,
+  inputFocused,
+  titleFocused,
+  fullWidth,
+  title,
+  onTitleChange,
+  onTitleBlur,
+  onContentChange,
+  onKeystroke,
+}: EditorProps) {
   const { height } = useTerminalDimensions();
 
-  // Disable cursor blinking to match user's terminal config
+  // Disable cursor blinking on both refs
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.cursorStyle = { blinking: false };
     }
-  }, [textareaRef]);
+    if (titleInputRef.current) {
+      titleInputRef.current.cursorStyle = { blinking: false };
+    }
+  }, [textareaRef, titleInputRef]);
 
   // Track content changes and keystrokes
   useEffect(() => {
@@ -41,8 +60,25 @@ export function Editor({ textareaRef, inputFocused, fullWidth, onContentChange, 
     return () => clearInterval(interval);
   }, [textareaRef, onContentChange, onKeystroke]);
 
-  // Vertical offset: start writing at ~1/3 down when full-width
+  // Track title changes
+  useEffect(() => {
+    let lastTitle = title;
+
+    const interval = setInterval(() => {
+      if (!titleInputRef.current) return;
+      let current: string;
+      try { current = titleInputRef.current.value; } catch { return; }
+      if (current !== lastTitle) {
+        lastTitle = current;
+        onTitleChange?.(current);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [titleInputRef, onTitleChange, title]);
+
   const topPad = fullWidth ? Math.floor(height * 0.15) : 1;
+  const colWidth = fullWidth ? 64 : undefined;
 
   return (
     <box
@@ -59,18 +95,31 @@ export function Editor({ textareaRef, inputFocused, fullWidth, onContentChange, 
           justifyContent: fullWidth ? "center" : undefined,
           paddingTop: topPad,
           paddingBottom: topPad,
+          paddingLeft: fullWidth ? undefined : 4,
         }}
       >
-        <textarea
-          ref={textareaRef as React.RefObject<TextareaRenderable>}
-          focused={inputFocused}
-          placeholder="Start writing..."
+        <box
           style={{
             flexGrow: fullWidth ? undefined : 1,
-            maxWidth: fullWidth ? 64 : undefined,
-            width: fullWidth ? 64 : undefined,
+            maxWidth: colWidth,
+            width: colWidth,
+            flexDirection: "column",
           }}
-        />
+        >
+          <input
+            ref={titleInputRef as RefObject<InputRenderable>}
+            focused={titleFocused}
+            placeholder="Untitled"
+            onSubmit={onTitleBlur}
+          />
+          <box style={{ height: 1 }} />
+          <textarea
+            ref={textareaRef as RefObject<TextareaRenderable>}
+            focused={inputFocused}
+            placeholder="Start writing..."
+            style={{ flexGrow: 1 }}
+          />
+        </box>
       </box>
     </box>
   );

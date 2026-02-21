@@ -45,9 +45,8 @@ export function ChatView({
   }, [isStreaming, onSubmit]);
 
   // Build a unified message list including streaming content
-  const displayMessages: { role: "user" | "assistant"; content: string; faint?: boolean }[] = [
-    ...messages,
-  ];
+  type DisplayMessage = ChatMessage & { faint?: boolean };
+  const displayMessages: DisplayMessage[] = [...messages];
   if (isStreaming) {
     displayMessages.push({
       role: "assistant",
