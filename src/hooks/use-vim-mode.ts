@@ -62,6 +62,21 @@ export function useVimMode({
   }, []);
 
   useKeyboard((key) => {
+    // Space leader → AI commands (works from any input in normal mode)
+    if (mode === "normal" && pendingKey.current === "space") {
+      key.preventDefault();
+      pendingKey.current = null;
+      if (titleFocused) onTitleBlur();
+      switch (key.name) {
+        case "d": onCommand("discuss"); break;
+        case "r": onCommand("review"); break;
+        case "p": onCommand("polish"); break;
+        case "n": onNewSession(); break;
+        case "b": onBrowse(); break;
+      }
+      return;
+    }
+
     // Title input is focused — respect vim modes
     if (titleFocused) {
       if (mode === "normal") {
@@ -82,6 +97,9 @@ export function useVimMode({
           case "q":
             onQuit();
             break;
+          case "space":
+            pendingKey.current = "space";
+            break;
         }
       } else if (mode === "insert") {
         if (key.name === "escape") {
@@ -98,19 +116,6 @@ export function useVimMode({
       const ta = textareaRef.current;
 
       // --- Pending key sequences ---
-
-      // Space leader → AI commands
-      if (pendingKey.current === "space") {
-        pendingKey.current = null;
-        switch (key.name) {
-          case "d": onCommand("discuss"); break;
-          case "r": onCommand("review"); break;
-          case "p": onCommand("polish"); break;
-          case "n": onNewSession(); break;
-          case "b": onBrowse(); break;
-        }
-        return;
-      }
 
       // g prefix
       if (pendingKey.current === "g") {
