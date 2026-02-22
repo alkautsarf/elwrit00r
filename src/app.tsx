@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRenderer } from "@opentui/react";
-import type { TextareaRenderable, InputRenderable } from "@opentui/core";
+import type { TextareaRenderable, InputRenderable, ScrollBoxRenderable } from "@opentui/core";
 import { writeFile, readFile } from "node:fs/promises";
 import { resolve, basename } from "node:path";
 import { Editor } from "./components/editor";
@@ -33,6 +33,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   const renderer = useRenderer();
   const textareaRef = useRef<TextareaRenderable>(null);
   const titleInputRef = useRef<InputRenderable>(null);
+  const aiScrollRef = useRef<ScrollBoxRenderable>(null);
   const [view, setView] = useState<View>(initialView);
   const [activePane, setActivePane] = useState<Pane>("editor");
   const [aiMode, setAiMode] = useState<AiMode>("idle");
@@ -383,6 +384,14 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     setTitleFocused(false);
   }, []);
 
+  const handleScroll = useCallback((amount: number, unit: "line" | "viewport") => {
+    if (unit === "viewport") {
+      aiScrollRef.current?.scrollBy(amount, "viewport");
+    } else {
+      aiScrollRef.current?.scrollBy(amount * 3, "absolute");
+    }
+  }, []);
+
   const { mode, pendingKey } = useVimMode({
     textareaRef,
     onCommand: handleCommand,
@@ -394,6 +403,8 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     onToggleSidebar: handleToggleSidebar,
     onTitleFocus: handleTitleFocus,
     onTitleBlur: handleTitleBlur,
+    onScroll: handleScroll,
+    activePane,
     titleFocused,
   });
 
@@ -507,6 +518,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           focused={activePane === "ai"}
           mode={aiMode}
           vimMode={mode}
+          scrollRef={aiScrollRef}
           chatMessages={chatMessages}
           chatStreamingContent={chatStreamingContent}
           isChatStreaming={isChatStreaming}

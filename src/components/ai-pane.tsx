@@ -1,3 +1,5 @@
+import type { RefObject } from "react";
+import type { ScrollBoxRenderable } from "@opentui/core";
 import { theme } from "../theme";
 import { ChatView, type ChatMessage } from "./chat-view";
 import { OutputView } from "./output-view";
@@ -10,6 +12,7 @@ interface AiPaneProps {
   focused: boolean;
   mode: AiMode;
   vimMode: VimMode;
+  scrollRef: RefObject<ScrollBoxRenderable | null>;
   // Chat state (discuss)
   chatMessages: ChatMessage[];
   chatStreamingContent: string;
@@ -33,6 +36,7 @@ export function AiPane({
   focused,
   mode,
   vimMode,
+  scrollRef,
   chatMessages,
   chatStreamingContent,
   isChatStreaming,
@@ -49,6 +53,7 @@ export function AiPane({
           isStreaming={isChatStreaming}
           inputFocused={focused && vimMode === "insert"}
           onSubmit={onChatSubmit}
+          scrollRef={scrollRef}
         />
       );
     }
@@ -58,6 +63,7 @@ export function AiPane({
           label={mode === "review" ? "Reviewing" : "Polishing"}
           content={outputContent}
           isStreaming={isOutputStreaming}
+          scrollRef={scrollRef}
         />
       );
     }

@@ -5,6 +5,8 @@ import type { TextareaRenderable } from "@opentui/core";
 export type VimMode = "normal" | "insert" | "visual";
 export type AiCommand = "discuss" | "review" | "polish";
 
+type ScrollUnit = "line" | "viewport";
+
 interface UseVimModeOptions {
   textareaRef: RefObject<TextareaRenderable | null>;
   onCommand: (command: AiCommand, selectedText?: string) => void;
@@ -16,6 +18,8 @@ interface UseVimModeOptions {
   onToggleSidebar: () => void;
   onTitleFocus: () => void;
   onTitleBlur: () => void;
+  onScroll: (amount: number, unit: ScrollUnit) => void;
+  activePane: "editor" | "ai" | "sidebar";
   titleFocused: boolean;
 }
 
@@ -30,6 +34,8 @@ export function useVimMode({
   onToggleSidebar,
   onTitleFocus,
   onTitleBlur,
+  onScroll,
+  activePane,
   titleFocused,
 }: UseVimModeOptions) {
   const [mode, setMode] = useState<VimMode>("normal");
@@ -145,9 +151,13 @@ export function useVimMode({
         // Cursor movement
         case "h": ta?.moveCursorLeft(); break;
         case "l": ta?.moveCursorRight(); break;
-        case "j": ta?.moveCursorDown(); break;
+        case "j":
+          if (activePane === "ai") { onScroll(1, "line"); }
+          else { ta?.moveCursorDown(); }
+          break;
         case "k":
-          if (ta && ta.logicalCursor.row === 0) {
+          if (activePane === "ai") { onScroll(-1, "line"); }
+          else if (ta && ta.logicalCursor.row === 0) {
             onTitleFocus();
           } else {
             ta?.moveCursorUp();
@@ -198,13 +208,6 @@ export function useVimMode({
           ta?.deleteChar();
           enterInsert();
           break;
-        case "d":
-          if (key.shift) {
-            ta?.deleteToLineEnd(); // D
-          } else {
-            pendingKey.current = "d"; // dd, dw, d$, d0
-          }
-          break;
         case "c":
           if (key.shift) {
             ta?.deleteToLineEnd(); // C
@@ -212,8 +215,19 @@ export function useVimMode({
           }
           break;
 
-        // Undo/redo
-        case "u": ta?.undo(); break;
+        // Scroll AI pane / Undo/redo
+        case "u":
+          if (key.ctrl) { onScroll(-0.5, "viewport"); }
+          else { ta?.undo(); }
+          break;
+        case "d":
+          if (key.ctrl) { onScroll(0.5, "viewport"); }
+          else if (key.shift) {
+            ta?.deleteToLineEnd(); // D
+          } else {
+            pendingKey.current = "d"; // dd, dw, d$, d0
+          }
+          break;
         case "r":
           if (key.ctrl) ta?.redo(); // Ctrl+R
           break;

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from "react";
-import type { TextareaRenderable } from "@opentui/core";
+import { useEffect, useRef, useCallback, type RefObject } from "react";
+import type { TextareaRenderable, ScrollBoxRenderable } from "@opentui/core";
 import { theme } from "../theme";
 
 interface ChatMessage {
@@ -13,6 +13,7 @@ interface ChatViewProps {
   isStreaming: boolean;
   inputFocused: boolean;
   onSubmit: (text: string) => void;
+  scrollRef: RefObject<ScrollBoxRenderable | null>;
 }
 
 export function ChatView({
@@ -21,6 +22,7 @@ export function ChatView({
   isStreaming,
   inputFocused,
   onSubmit,
+  scrollRef,
 }: ChatViewProps) {
   const inputRef = useRef<TextareaRenderable>(null);
 
@@ -59,6 +61,7 @@ export function ChatView({
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       {/* Chat thread */}
       <scrollbox
+        ref={scrollRef}
         style={{ flexGrow: 1 }}
         stickyScroll
         stickyStart="bottom"

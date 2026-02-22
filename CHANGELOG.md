@@ -4,6 +4,13 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-02-22
+
+### Added
+
+- Keyboard scrolling for AI pane: Ctrl+U/Ctrl+D for half-page scroll, j/k when AI pane is focused via Tab
+- Pane-aware navigation: j/k scroll the AI pane when focused, move editor cursor when not
+
 ## [0.1.1] - 2026-02-22
 
 ### Fixed
@@ -36,5 +43,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.2.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.2.0
 [0.1.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.1.1
 [0.1.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.1.0

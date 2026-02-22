@@ -1,3 +1,5 @@
+import type { RefObject } from "react";
+import type { ScrollBoxRenderable } from "@opentui/core";
 import { theme } from "../theme";
 import { getMarkdownStyle } from "../lib/markdown-style";
 
@@ -5,12 +7,14 @@ interface OutputViewProps {
   label: string;
   content: string;
   isStreaming: boolean;
+  scrollRef: RefObject<ScrollBoxRenderable | null>;
 }
 
-export function OutputView({ label, content, isStreaming }: OutputViewProps) {
+export function OutputView({ label, content, isStreaming, scrollRef }: OutputViewProps) {
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       <scrollbox
+        ref={scrollRef}
         style={{ flexGrow: 1 }}
         stickyScroll
         stickyStart="bottom"
