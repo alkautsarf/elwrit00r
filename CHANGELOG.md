@@ -4,6 +4,21 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-02-23
+
+### Added
+
+- `--no-ai` flag to disable all AI features for pure distraction-free writing
+- Discuss mode now includes the title as a `# heading` in context sent to AI
+
+### Changed
+
+- Auto-save debounce reduced from 2s to 500ms for faster persistence
+
+### Fixed
+
+- Stale `title` closure in discuss chat — AI now sees the current title, not the initial empty value
+
 ## [0.2.1] - 2026-02-22
 
 ### Fixed
@@ -49,6 +64,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.3.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.0
 [0.2.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.2.1
 [0.2.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.2.0
 [0.1.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.1.1

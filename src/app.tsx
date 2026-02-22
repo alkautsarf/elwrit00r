@@ -27,9 +27,10 @@ interface AppProps {
   filePath?: string;
   writingsDir: string;
   sessionFile: string;
+  noAi?: boolean;
 }
 
-export function App({ initialView, initialContent, filePath: initialFilePath, writingsDir, sessionFile }: AppProps) {
+export function App({ initialView, initialContent, filePath: initialFilePath, writingsDir, sessionFile, noAi }: AppProps) {
   const renderer = useRenderer();
   const textareaRef = useRef<TextareaRenderable>(null);
   const titleInputRef = useRef<InputRenderable>(null);
@@ -195,7 +196,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   // Auto-save: debounced 2s after content change
   const scheduleAutoSave = useCallback(() => {
     cancelAutoSave();
-    autoSaveTimerRef.current = setTimeout(saveFile, 2000);
+    autoSaveTimerRef.current = setTimeout(saveFile, 500);
   }, [saveFile, cancelAutoSave]);
 
   // Cleanup auto-save timer
@@ -284,10 +285,12 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           discussRef.current = new DiscussSession();
         }
 
+        const body = getEditorContent();
+        const content = title ? `# ${title}\n\n${body}` : body;
         const fullText = await discussRef.current.sendMessage(
           text,
           (chunk) => setChatStreamingContent((prev) => prev + chunk),
-          getEditorContent()
+          content
         );
 
         setChatMessages((prev) => [
@@ -304,12 +307,13 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
         setIsChatStreaming(false);
       }
     },
-    [isChatStreaming, getEditorContent]
+    [isChatStreaming, getEditorContent, title]
   );
 
   // --- Command handler ---
   const handleCommand = useCallback(
     (command: AiCommand, selectedText?: string) => {
+      if (noAi) return;
       selectedTextRef.current = selectedText;
       setAiMode(command);
       setActivePane("ai");
@@ -329,7 +333,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           .finally(() => setIsOutputStreaming(false));
       }
     },
-    [getEditorContent]
+    [getEditorContent, noAi]
   );
 
   const handleReset = useCallback(() => {
@@ -346,6 +350,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   }, [flushIfModified]);
 
   const handleNewSession = useCallback(() => {
+    if (noAi) return;
     discussRef.current?.abort();
     discussRef.current = null;
     setChatMessages([]);
@@ -353,7 +358,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     setIsChatStreaming(false);
     setAiMode("idle");
     setActivePane("editor");
-  }, []);
+  }, [noAi]);
 
   const handleQuit = useCallback(async () => {
     cancelAutoSave();
@@ -445,6 +450,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
 
   // --- Whisper trigger ---
   useEffect(() => {
+    if (noAi) return;
     if (view !== "editor") return;
     if (!isIdle || mode !== "normal") return;
     if (aiMode !== "idle" && aiMode !== "whisper") return;
@@ -456,7 +462,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
       if (whisperTimerRef.current) clearTimeout(whisperTimerRef.current);
       whisperTimerRef.current = setTimeout(() => setWhisperText(null), 10_000);
     });
-  }, [isIdle, mode, aiMode, getEditorContent, view, pendingKey]);
+  }, [isIdle, mode, aiMode, getEditorContent, view, pendingKey, noAi]);
 
   useEffect(() => {
     return () => {
@@ -537,6 +543,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
         aiPaneVisible={aiPaneVisible}
         fileName={title || fileName}
         saveStatus={saveStatus}
+        noAi={noAi}
       />
     </box>
   );

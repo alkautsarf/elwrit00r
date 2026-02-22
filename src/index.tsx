@@ -20,6 +20,7 @@ const SESSION_FILE = resolve(HOME, ".elwrit00r", "session.json");
 
 // Ensure directory exists
 await mkdir(WRITINGS_DIR, { recursive: true });
+const noAi = args.includes("--no-ai");
 const isNew = args.includes("--new");
 const fileArg = args.find((a) => !a.startsWith("--"));
 
@@ -47,5 +48,6 @@ createRoot(renderer).render(
     filePath={filePath}
     writingsDir={WRITINGS_DIR}
     sessionFile={SESSION_FILE}
+    noAi={noAi}
   />
 );

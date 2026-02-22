@@ -11,6 +11,7 @@ interface StatusBarProps {
   aiPaneVisible: boolean;
   fileName?: string;
   saveStatus?: SaveStatus;
+  noAi?: boolean;
 }
 
 const modeDisplay: Record<VimMode, { label: string; color: string }> = {
@@ -19,7 +20,7 @@ const modeDisplay: Record<VimMode, { label: string; color: string }> = {
   visual: { label: "VISUAL", color: theme.purple },
 };
 
-export function StatusBar({ mode, wpm, wordCount, elapsed, whisperText, aiPaneVisible, fileName, saveStatus }: StatusBarProps) {
+export function StatusBar({ mode, wpm, wordCount, elapsed, whisperText, aiPaneVisible, fileName, saveStatus, noAi }: StatusBarProps) {
   const { label, color } = modeDisplay[mode];
 
   // Build left side as a single stable string
@@ -27,9 +28,9 @@ export function StatusBar({ mode, wpm, wordCount, elapsed, whisperText, aiPaneVi
 
   // Center content: whisper > keybinding hints > nothing
   let centerText: string | null = null;
-  if (whisperText) {
+  if (!noAi && whisperText) {
     centerText = whisperText;
-  } else if (!aiPaneVisible && mode === "normal") {
+  } else if (!noAi && !aiPaneVisible && mode === "normal") {
     centerText = "spc: d discuss  r review  p polish";
   }
 

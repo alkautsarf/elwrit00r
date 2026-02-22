@@ -6,8 +6,10 @@ Terminal writing app with vim keybindings and AI companion. Built with [OpenTUI]
 
 - **Vim modal editing** -- Normal, Insert, and Visual modes with full cursor motions, yank/paste, and delete operations
 - **AI companion** -- Discuss ideas, review drafts, and polish writing with Claude, plus idle whispers that nudge you forward
-- **File management** -- Auto-saving drafts to `~/.elwrit00r/writings/`, file browser, sidebar for quick switching
+- **No-AI mode** -- `--no-ai` flag for pure distraction-free writing without any AI features
+- **File management** -- Auto-saving drafts (500ms debounce) to `~/.elwrit00r/writings/`, file browser, sidebar for quick switching
 - **Title-based naming** -- Title field that auto-renames the file slug as you type
+- **Pane navigation** -- Tab to switch between editor and AI pane, j/k scroll AI pane when focused
 - **Markdown output** -- AI review and polish responses rendered with syntax-highlighted markdown
 
 ## Screens
@@ -16,7 +18,7 @@ Terminal writing app with vim keybindings and AI companion. Built with [OpenTUI]
 
 **Editor** -- Full-screen distraction-free writing with vim keybindings. Status bar shows mode, WPM, word count, and elapsed time.
 
-**AI pane** -- Side panel for discuss (multi-turn chat), review (structured feedback), and polish (rewrite) modes.
+**AI pane** -- Side panel for discuss (multi-turn chat), review (structured feedback), and polish (rewrite) modes. Ctrl+U/D for half-page scroll, j/k when focused via Tab.
 
 ## Install
 
@@ -36,6 +38,7 @@ bun install
 elwrit00r                # file browser
 elwrit00r draft.md       # open specific file
 elwrit00r --new          # fresh draft
+elwrit00r --no-ai        # pure writing mode, no AI features
 ```
 
 Or create an alias:
@@ -49,25 +52,25 @@ exec bun run "$ELW_DIR/src/index.tsx" "$@"
 
 ## Keybindings
 
-| Screen  | Key     | Action              |
-|---------|---------|---------------------|
-| Browser | j/k     | Navigate            |
-| Browser | Enter   | Open file           |
-| Browser | n       | New writing         |
-| Browser | d       | Delete (confirm)    |
-| Browser | q       | Quit                |
-| Editor  | i/a/o   | Enter Insert mode   |
-| Editor  | Esc     | Back to Normal      |
-| Editor  | v       | Visual select       |
-| Editor  | T       | Focus title         |
-| Editor  | Tab     | Switch pane         |
-| Editor  | Ctrl+b  | Toggle sidebar      |
-| Editor  | Spc+d   | Discuss (AI chat)   |
-| Editor  | Spc+r   | Review              |
-| Editor  | Spc+p   | Polish              |
-| Editor  | Spc+n   | New AI session      |
-| Editor  | Spc+b   | Back to browser     |
-| Editor  | q       | Quit                |
+| Screen  | Key       | Action              |
+|---------|-----------|---------------------|
+| Browser | j/k       | Navigate            |
+| Browser | Enter     | Open file           |
+| Browser | n         | New writing         |
+| Browser | d         | Delete (confirm)    |
+| Browser | q         | Quit                |
+| Editor  | i/a/o     | Enter Insert mode   |
+| Editor  | Esc       | Back to Normal      |
+| Editor  | v         | Visual select       |
+| Editor  | T         | Focus title         |
+| Editor  | Tab       | Switch pane         |
+| Editor  | Ctrl+U/D  | Scroll AI pane      |
+| Editor  | Spc+d     | Discuss (AI chat)   |
+| Editor  | Spc+r     | Review              |
+| Editor  | Spc+p     | Polish              |
+| Editor  | Spc+n     | New AI session      |
+| Editor  | Spc+b     | Back to browser     |
+| Editor  | q         | Quit                |
 
 ## Stack
 
