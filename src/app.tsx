@@ -41,12 +41,27 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   // File state
   const currentFileRef = useRef<string | null>(initialFilePath ?? null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  const saveStatusRef = useRef<SaveStatus>("saved");
   const [sidebarVisible, setSidebarVisible] = useState(false);
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
   const [fileName, setFileName] = useState<string>(
     initialFilePath ? basename(initialFilePath) : ""
   );
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep saveStatusRef in sync with state for synchronous reads in closures
+  const updateSaveStatus = useCallback((status: SaveStatus) => {
+    saveStatusRef.current = status;
+    setSaveStatus(status);
+  }, []);
+
+  // Cancel pending auto-save timer
+  const cancelAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+  }, []);
   const [title, setTitle] = useState("");
   const [titleFocused, setTitleFocused] = useState(false);
 
@@ -86,6 +101,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   // Rename file based on title
   const renameFileForTitle = useCallback(async (newTitle: string) => {
     if (!newTitle.trim() || !currentFileRef.current) return;
+    cancelAutoSave(); // Prevent save targeting old path during rename
     const slug = newTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     if (!slug) return;
     const dir = resolve(currentFileRef.current, "..");
@@ -103,7 +119,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
 
     currentFileRef.current = newPath;
     setFileName(basename(newPath));
-  }, []);
+  }, [cancelAutoSave]);
 
   // Derive title from filename slug (reverse of slugification)
   const titleFromPath = useCallback((path: string) => {
@@ -117,27 +133,35 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     const file = currentFileRef.current;
     if (!file) return;
 
-    setSaveStatus("saving");
+    // Don't save if editor is unmounted — ref is null, would write stale empty content
+    if (!textareaRef.current) return;
+
+    const content = getEditorContent();
+    updateSaveStatus("saving");
     try {
-      const content = getEditorContent();
       await writeFile(file, content, "utf-8");
       await writeFile(
         sessionFile,
         JSON.stringify({ filePath: file, title, lastModified: new Date().toISOString() }),
         "utf-8"
       );
-      setSaveStatus("saved");
+      updateSaveStatus("saved");
       setSidebarRefreshKey((k) => k + 1);
     } catch {
-      setSaveStatus("modified");
+      updateSaveStatus("modified");
     }
-  }, [getEditorContent, sessionFile, title]);
+  }, [getEditorContent, sessionFile, title, updateSaveStatus]);
 
-  const loadFile = useCallback(async (path: string) => {
-    // Save current file first
-    if (currentFileRef.current && saveStatus === "modified") {
+  // Cancel auto-save and flush pending changes if the current file is modified
+  const flushIfModified = useCallback(async () => {
+    cancelAutoSave();
+    if (currentFileRef.current && saveStatusRef.current === "modified") {
       await saveFile();
     }
+  }, [saveFile, cancelAutoSave]);
+
+  const loadFile = useCallback(async (path: string) => {
+    await flushIfModified();
 
     const derived = titleFromPath(path);
     setTitle(derived);
@@ -146,7 +170,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
       const content = await readFile(path, "utf-8");
       currentFileRef.current = path;
       setFileName(basename(path));
-      setSaveStatus("saved");
+      updateSaveStatus("saved");
 
       if (textareaRef.current) {
         textareaRef.current.setText(content);
@@ -165,25 +189,36 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
         titleInputRef.current.clear();
       }
     }
-  }, [saveStatus, saveFile, titleFromPath]);
+  }, [flushIfModified, titleFromPath, updateSaveStatus]);
 
   // Auto-save: debounced 2s after content change
   const scheduleAutoSave = useCallback(() => {
-    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    autoSaveTimerRef.current = setTimeout(() => {
-      saveFile();
-    }, 2000);
-  }, [saveFile]);
+    cancelAutoSave();
+    autoSaveTimerRef.current = setTimeout(saveFile, 2000);
+  }, [saveFile, cancelAutoSave]);
 
   // Cleanup auto-save timer
   useEffect(() => {
-    return () => {
-      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    };
-  }, []);
+    return () => cancelAutoSave();
+  }, [cancelAutoSave]);
+
+  // Create a new untitled file, flushing any pending changes first
+  const createNewFile = useCallback(() => {
+    flushIfModified();
+    const id = Date.now().toString(36);
+    const path = resolve(writingsDir, `untitled-${id}.md`);
+    currentFileRef.current = path;
+    setFileName(basename(path));
+    setTitle("");
+    setTitleFocused(true);
+    updateSaveStatus("modified");
+    return path;
+  }, [writingsDir, flushIfModified, updateSaveStatus]);
 
   // --- File browser handlers ---
   const handleBrowserOpen = useCallback(async (path: string) => {
+    await flushIfModified();
+
     currentFileRef.current = path;
     setFileName(basename(path));
     const derived = titleFromPath(path);
@@ -203,19 +238,13 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     } catch {
       setView("editor");
     }
-    setSaveStatus("saved");
-  }, [titleFromPath]);
+    updateSaveStatus("saved");
+  }, [titleFromPath, flushIfModified, updateSaveStatus]);
 
   const handleBrowserNew = useCallback(() => {
-    const id = Date.now().toString(36);
-    const path = resolve(writingsDir, `untitled-${id}.md`);
-    currentFileRef.current = path;
-    setFileName(basename(path));
-    setTitle("");
-    setTitleFocused(true);
+    createNewFile();
     setView("editor");
-    setSaveStatus("modified");
-  }, [writingsDir]);
+  }, [createNewFile]);
 
   // --- Sidebar handlers ---
   const handleSidebarOpen = useCallback(async (path: string) => {
@@ -225,19 +254,13 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   }, [loadFile]);
 
   const handleSidebarNew = useCallback(() => {
-    const id = Date.now().toString(36);
-    const path = resolve(writingsDir, `untitled-${id}.md`);
-    currentFileRef.current = path;
-    setFileName(basename(path));
-    setTitle("");
-    setTitleFocused(true);
+    createNewFile();
     if (textareaRef.current) {
       textareaRef.current.clear();
     }
     setSidebarVisible(false);
     setActivePane("editor");
-    setSaveStatus("modified");
-  }, [writingsDir]);
+  }, [createNewFile]);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarVisible((v) => {
@@ -314,15 +337,12 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   }, []);
 
   const handleBrowse = useCallback(async () => {
-    // Save current file before switching to browser
-    if (currentFileRef.current && saveStatus === "modified") {
-      await saveFile();
-    }
+    await flushIfModified();
     setAiMode("idle");
     setSidebarVisible(false);
     setActivePane("editor");
     setView("browser");
-  }, [saveStatus, saveFile]);
+  }, [flushIfModified]);
 
   const handleNewSession = useCallback(() => {
     discussRef.current?.abort();
@@ -335,25 +355,14 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   }, []);
 
   const handleQuit = useCallback(async () => {
-    // Auto-save on quit
-    if (currentFileRef.current) {
-      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-      const content = getEditorContent();
-      if (content.trim()) {
-        try {
-          await writeFile(currentFileRef.current, content, "utf-8");
-          await writeFile(
-            sessionFile,
-            JSON.stringify({ filePath: currentFileRef.current, lastModified: new Date().toISOString() }),
-            "utf-8"
-          );
-        } catch { /* best effort */ }
-      }
+    cancelAutoSave();
+    if (currentFileRef.current && getEditorContent().trim()) {
+      try { await saveFile(); } catch { /* best effort */ }
     }
     discussRef.current?.abort();
     renderer.destroy();
     process.exit(0);
-  }, [renderer, getEditorContent, sessionFile]);
+  }, [renderer, getEditorContent, saveFile, cancelAutoSave]);
 
   const aiPaneVisible = aiMode !== "idle";
 
@@ -394,20 +403,20 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   const handleContentChange = useCallback(
     (text: string) => {
       updateContent(text);
-      setSaveStatus("modified");
+      updateSaveStatus("modified");
       scheduleAutoSave();
     },
-    [updateContent, scheduleAutoSave]
+    [updateContent, scheduleAutoSave, updateSaveStatus]
   );
 
   const handleTitleChange = useCallback(
     (newTitle: string) => {
       setTitle(newTitle);
-      setSaveStatus("modified");
+      updateSaveStatus("modified");
       renameFileForTitle(newTitle);
       scheduleAutoSave();
     },
-    [renameFileForTitle, scheduleAutoSave]
+    [renameFileForTitle, scheduleAutoSave, updateSaveStatus]
   );
 
   const handleKeystroke = useCallback(
