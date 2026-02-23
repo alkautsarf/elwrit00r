@@ -4,6 +4,13 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-02-24
+
+### Changed
+
+- Move whisper nudges from status bar to centered above editor title
+- Add `b browse` to status bar keybinding hints (also shown in `--no-ai` mode)
+
 ## [0.3.0] - 2026-02-23
 
 ### Added
@@ -64,6 +71,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.3.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.1
 [0.3.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.0
 [0.2.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.2.1
 [0.2.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.2.0

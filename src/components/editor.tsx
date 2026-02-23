@@ -1,6 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import type { TextareaRenderable, InputRenderable } from "@opentui/core";
 import { useTerminalDimensions } from "@opentui/react";
+import { theme } from "../theme";
 
 interface EditorProps {
   textareaRef: RefObject<TextareaRenderable | null>;
@@ -9,6 +10,7 @@ interface EditorProps {
   titleFocused: boolean;
   fullWidth: boolean;
   title: string;
+  whisperText?: string | null;
   onTitleChange?: (text: string) => void;
   onTitleBlur?: () => void;
   onContentChange?: (text: string) => void;
@@ -22,6 +24,7 @@ export function Editor({
   titleFocused,
   fullWidth,
   title,
+  whisperText,
   onTitleChange,
   onTitleBlur,
   onContentChange,
@@ -88,13 +91,19 @@ export function Editor({
         flexDirection: "column",
       }}
     >
+      {/* Top spacer with optional whisper */}
+      <box style={{ height: topPad, justifyContent: "center", alignItems: "center" }}>
+        {whisperText && fullWidth && (
+          <text fg={theme.fgFaint}>{whisperText}</text>
+        )}
+      </box>
+
+      {/* Content row (horizontal centering) */}
       <box
         style={{
           flexGrow: 1,
           flexDirection: "row",
           justifyContent: fullWidth ? "center" : undefined,
-          paddingTop: topPad,
-          paddingBottom: topPad,
           paddingLeft: fullWidth ? undefined : 4,
         }}
       >
@@ -121,6 +130,9 @@ export function Editor({
           />
         </box>
       </box>
+
+      {/* Bottom spacer */}
+      <box style={{ height: topPad }} />
     </box>
   );
 }

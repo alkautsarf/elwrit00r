@@ -516,6 +516,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           title={title}
           onTitleChange={handleTitleChange}
           onTitleBlur={() => setTitleFocused(false)}
+          whisperText={whisperText}
           onContentChange={handleContentChange}
           onKeystroke={handleKeystroke}
         />
@@ -539,7 +540,6 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
         wpm={wpm}
         wordCount={wordCount}
         elapsed={elapsed}
-        whisperText={whisperText}
         aiPaneVisible={aiPaneVisible}
         fileName={title || fileName}
         saveStatus={saveStatus}
