@@ -1,6 +1,26 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
+import { execSync } from "node:child_process";
 
 const MODEL = "claude-opus-4-6";
+
+// In compiled binaries, import.meta.url points to $bunfs virtual filesystem
+// where cli.js doesn't exist. Find the system claude binary instead.
+const IS_COMPILED = import.meta.url.includes("$bunfs");
+
+function findClaudeBinary(): string | null {
+  const local = join(homedir(), ".local", "bin", "claude");
+  if (existsSync(local)) return local;
+  try {
+    const found = execSync("which claude 2>/dev/null", { encoding: "utf8" }).trim();
+    if (found && existsSync(found)) return found;
+  } catch {}
+  return null;
+}
+
+const claudeCodePath = IS_COMPILED ? findClaudeBinary() : undefined;
 
 const BASE_OPTIONS = {
   model: MODEL,
@@ -81,6 +101,7 @@ export async function streamQuery({
       systemPrompt,
       persistSession: persist,
       abortController,
+      ...(claudeCodePath ? { pathToClaudeCodeExecutable: claudeCodePath } : {}),
     },
   });
   return processStream(stream, onChunk);
@@ -102,6 +123,7 @@ export async function resumeQuery({
       resume: sessionId,
       persistSession: true,
       abortController,
+      ...(claudeCodePath ? { pathToClaudeCodeExecutable: claudeCodePath } : {}),
     },
   });
   return processStream(stream, onChunk, sessionId);
