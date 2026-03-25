@@ -6,6 +6,8 @@ Terminal writing app with vim keybindings and AI companion. Built with [OpenTUI]
 
 - **Vim modal editing** -- Normal, Insert, and Visual modes with full cursor motions, yank/paste, and delete operations
 - **AI companion** -- Discuss ideas, review drafts, and polish writing with Claude, plus idle whispers that nudge you forward
+- **Accept polish** -- Apply polished text directly back to the editor with Spc+a
+- **Publish to your site** -- Publish and unpublish writing directly from the terminal via API
 - **No-AI mode** -- `--no-ai` flag for pure distraction-free writing without any AI features
 - **File management** -- Auto-saving drafts (500ms debounce) to `~/.elwrit00r/writings/`, file browser, sidebar for quick switching
 - **Title-based naming** -- Title field that auto-renames the file slug as you type
@@ -64,13 +66,119 @@ exec bun run "$ELW_DIR/src/index.tsx" "$@"
 | Editor  | v         | Visual select       |
 | Editor  | T         | Focus title         |
 | Editor  | Tab       | Switch pane         |
+| Editor  | Ctrl+B    | Toggle sidebar      |
 | Editor  | Ctrl+U/D  | Scroll AI pane      |
 | Editor  | Spc+d     | Discuss (AI chat)   |
 | Editor  | Spc+r     | Review              |
 | Editor  | Spc+p     | Polish              |
+| Editor  | Spc+a     | Accept polish       |
+| Editor  | Spc+P     | Publish to site     |
+| Editor  | Spc+U     | Unpublish from site |
 | Editor  | Spc+n     | New AI session      |
 | Editor  | Spc+b     | Back to browser     |
 | Editor  | q         | Quit                |
+
+## Publishing
+
+elwrit00r can publish writing directly to any site with a compatible API. The publish flow: review your writing (Spc+r to generate tags), then Spc+P to publish.
+
+### Setup
+
+Create a config file at `~/.config/elwrit00r/config.json`:
+
+```json
+{
+  "publish": {
+    "url": "https://yoursite.com/api/writing",
+    "keychainService": "yoursite.publish-key",
+    "keychainAccount": "publish-key"
+  }
+}
+```
+
+Store your API key using one of these methods:
+
+**Option 1: Config file** (any platform)
+
+Add `"apiKey"` directly to your config:
+
+```json
+{
+  "publish": {
+    "url": "https://yoursite.com/api/writing",
+    "apiKey": "YOUR_API_KEY"
+  }
+}
+```
+
+**Option 2: Environment variable** (any platform)
+
+```bash
+export ELWRIT00R_PUBLISH_KEY="YOUR_API_KEY"
+```
+
+**Option 3: macOS Keychain** (macOS only)
+
+```bash
+security add-generic-password -s "yoursite.publish-key" -a "publish-key" -w "YOUR_API_KEY"
+```
+
+With matching config:
+
+```json
+{
+  "publish": {
+    "url": "https://yoursite.com/api/writing",
+    "keychainService": "yoursite.publish-key",
+    "keychainAccount": "publish-key"
+  }
+}
+```
+
+### API contract
+
+Your site needs two endpoints:
+
+**POST `{url}/publish`** -- Create or update a post (upsert by slug).
+
+Request body:
+
+```json
+{
+  "slug": "my-post-title",
+  "title": "My Post Title",
+  "body": "Full markdown content...",
+  "excerpt": "First two sentences as preview text.",
+  "date": "2026-03-25",
+  "tags": ["terminal", "workflow"]
+}
+```
+
+Response: `{ "ok": true }` on success.
+
+**POST `{url}/unpublish`** -- Soft-delete a post (set published=false).
+
+Request body:
+
+```json
+{
+  "slug": "my-post-title"
+}
+```
+
+Response: `{ "ok": true }` on success.
+
+Both endpoints should accept `Authorization: Bearer <api-key>` header.
+
+### Publish flow
+
+1. Write your piece in elwrit00r
+2. Spc+r to review -- generates tags automatically
+3. Spc+P to publish -- shows confirmation with title, slug, excerpt, date, tags
+4. Spc+P again to confirm -- publishes to your site
+5. Escape to cancel at any point
+
+To update a published post, edit and Spc+P again (upsert by slug). To remove, Spc+U.
 
 ## Stack
 

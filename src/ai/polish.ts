@@ -6,7 +6,7 @@ export async function runPolish(
   onChunk: (text: string) => void
 ): Promise<string> {
   const result = await streamQuery({
-    prompt: content,
+    prompt: `Polish the following writing:\n\n---\n${content}\n---`,
     systemPrompt: PROMPTS.polish,
     onChunk,
   });

@@ -17,7 +17,7 @@ export async function triggerWhisper(
 
   try {
     const result = await streamQuery({
-      prompt: content,
+      prompt: `Give a writing nudge for the following:\n\n---\n${content}\n---`,
       systemPrompt: PROMPTS.whisper,
       onChunk: () => {},
     });

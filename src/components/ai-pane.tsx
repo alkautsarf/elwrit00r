@@ -3,9 +3,10 @@ import type { ScrollBoxRenderable } from "@opentui/core";
 import { theme } from "../theme";
 import { ChatView, type ChatMessage } from "./chat-view";
 import { OutputView } from "./output-view";
+import { PublishView, type PublishStatus } from "./publish-view";
 import type { VimMode } from "../hooks/use-vim-mode";
 
-export type AiMode = "idle" | "discuss" | "whisper" | "review" | "polish";
+export type AiMode = "idle" | "discuss" | "whisper" | "review" | "polish" | "publish";
 
 interface AiPaneProps {
   visible: boolean;
@@ -21,6 +22,14 @@ interface AiPaneProps {
   // Output state (review/polish)
   outputContent: string;
   isOutputStreaming: boolean;
+  // Publish state
+  publishStatus: PublishStatus;
+  publishTitle: string;
+  publishSlug: string;
+  publishExcerpt: string;
+  publishDate: string;
+  publishTags: string[];
+  publishResult: string;
 }
 
 const modeLabels: Record<AiMode, string> = {
@@ -29,6 +38,7 @@ const modeLabels: Record<AiMode, string> = {
   whisper: "AI Companion",
   review: "Review",
   polish: "Polish",
+  publish: "Publish",
 };
 
 export function AiPane({
@@ -43,6 +53,13 @@ export function AiPane({
   onChatSubmit,
   outputContent,
   isOutputStreaming,
+  publishStatus,
+  publishTitle,
+  publishSlug,
+  publishExcerpt,
+  publishDate,
+  publishTags,
+  publishResult,
 }: AiPaneProps) {
   function renderContent() {
     if (mode === "discuss") {
@@ -65,6 +82,19 @@ export function AiPane({
           isStreaming={isOutputStreaming}
           scrollRef={scrollRef}
           showAcceptHint={mode === "polish" && !isOutputStreaming && !!outputContent}
+        />
+      );
+    }
+    if (mode === "publish") {
+      return (
+        <PublishView
+          status={publishStatus}
+          title={publishTitle}
+          slug={publishSlug}
+          excerpt={publishExcerpt}
+          date={publishDate}
+          tags={publishTags}
+          result={publishResult}
         />
       );
     }

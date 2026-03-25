@@ -6,7 +6,7 @@ export async function runReview(
   onChunk: (text: string) => void
 ): Promise<string> {
   const result = await streamQuery({
-    prompt: content,
+    prompt: `Review the following writing:\n\n---\n${content}\n---`,
     systemPrompt: PROMPTS.review,
     onChunk,
   });

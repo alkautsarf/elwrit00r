@@ -5,6 +5,9 @@ import { writeFile, readFile } from "node:fs/promises";
 import { resolve, basename } from "node:path";
 import { Editor } from "./components/editor";
 import { AiPane, type AiMode } from "./components/ai-pane";
+import { type PublishStatus } from "./components/publish-view";
+import { loadConfig, getPublishConfig } from "./lib/config";
+import { buildPayload, publishPost, unpublishPost } from "./lib/publish";
 import { StatusBar } from "./components/status-bar";
 import { FileBrowser } from "./components/file-browser";
 import { Sidebar } from "./components/sidebar";
@@ -83,6 +86,11 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
 
   // Selected text from Visual mode
   const selectedTextRef = useRef<string | undefined>(undefined);
+
+  // Publish state
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>(null);
+  const [publishResult, setPublishResult] = useState("");
+  const [publishPayload, setPublishPayload] = useState<{ title: string; slug: string; excerpt: string; date: string; tags: string[] }>({ title: "", slug: "", excerpt: "", date: "", tags: [] });
 
   // Load initial content into textarea on mount
   useEffect(() => {
@@ -357,6 +365,114 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     setActivePane("editor");
   }, [aiMode, isOutputStreaming, outputContent, getEditorContent, scheduleAutoSave]);
 
+  const handleConfirmPublish = useCallback(async () => {
+    if (publishStatus === "confirm") {
+      setPublishStatus("publishing");
+      try {
+        const config = await loadConfig();
+        const pubConfig = getPublishConfig(config);
+        if (!pubConfig) {
+          setPublishStatus("error");
+          setPublishResult("No publish config found. Check ~/.config/elwrit00r/config.json");
+          return;
+        }
+        const payload = buildPayload(
+          currentFileRef.current ?? "",
+          title,
+          getEditorContent(),
+          publishPayload.tags,
+        );
+        const result = await publishPost(pubConfig, payload);
+        if (result.ok) {
+          setPublishStatus("success");
+          setPublishResult(`https://elpabl0.xyz/writing/${publishPayload.slug}`);
+        } else {
+          setPublishStatus("error");
+          setPublishResult(result.error ?? "Unknown error");
+        }
+      } catch (e) {
+        setPublishStatus("error");
+        setPublishResult(e instanceof Error ? e.message : "Unknown error");
+      }
+    }
+  }, [publishStatus, title, getEditorContent, publishPayload]);
+
+  const handlePublish = useCallback(() => {
+    // If already in confirm mode, trigger the actual publish
+    if (aiMode === "publish" && publishStatus === "confirm") {
+      handleConfirmPublish();
+      return;
+    }
+
+    if (!currentFileRef.current || !title.trim()) return;
+    const body = getEditorContent();
+    if (!body.trim()) return;
+
+    const slug = basename(currentFileRef.current, ".md");
+    const sentences = body.replace(/\n+/g, " ").trim().match(/[^.!?]+[.!?]+/g) ?? [];
+    const excerpt = sentences.slice(0, 2).join(" ").trim() || body.slice(0, 160);
+    const date = new Date().toISOString().split("T")[0];
+
+    // Parse tags from last review output if available
+    // Claude may format as: `bio`, `identity` OR `bio` `identity` OR bio, identity
+    const tagsMatch = outputContent.match(/\*\*Tags?:\*\*\s*(.+)/i);
+    const tags = tagsMatch
+      ? tagsMatch[1]
+          .replace(/[`'"#*]/g, "")
+          .split(/[,\s]+/)
+          .map((t) => t.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""))
+          .filter(Boolean)
+      : [];
+
+    setPublishPayload({ title, slug, excerpt, date, tags });
+    setPublishStatus("confirm");
+    setPublishResult("");
+    setAiMode("publish");
+    setActivePane("ai");
+  }, [aiMode, publishStatus, handleConfirmPublish, title, getEditorContent, outputContent]);
+
+  const handleConfirmUnpublish = useCallback(async () => {
+    if (!currentFileRef.current) return;
+    setPublishStatus("unpublishing");
+    try {
+      const config = await loadConfig();
+      const pubConfig = getPublishConfig(config);
+      if (!pubConfig) {
+        setPublishStatus("error");
+        setPublishResult("No publish config found.");
+        return;
+      }
+      const result = await unpublishPost(pubConfig, currentFileRef.current);
+      if (result.ok) {
+        setPublishStatus("success");
+        setPublishResult(`Removed ${basename(currentFileRef.current, ".md")} from site`);
+      } else {
+        setPublishStatus("error");
+        setPublishResult(result.error ?? "Unknown error");
+      }
+    } catch (e) {
+      setPublishStatus("error");
+      setPublishResult(e instanceof Error ? e.message : "Unknown error");
+    }
+  }, []);
+
+  const handleUnpublish = useCallback(() => {
+    if (!currentFileRef.current) return;
+
+    // If already in confirm mode, do the actual unpublish
+    if (aiMode === "publish" && publishStatus === "unpublish-confirm") {
+      handleConfirmUnpublish();
+      return;
+    }
+
+    const slug = basename(currentFileRef.current, ".md");
+    setPublishPayload((prev) => ({ ...prev, slug }));
+    setPublishStatus("unpublish-confirm");
+    setPublishResult("");
+    setAiMode("publish");
+    setActivePane("ai");
+  }, [aiMode, publishStatus, handleConfirmUnpublish]);
+
   const handleBrowse = useCallback(async () => {
     await flushIfModified();
     setAiMode("idle");
@@ -418,6 +534,8 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     onCommand: handleCommand,
     onReset: handleReset,
     onAcceptPolish: handleAcceptPolish,
+    onPublish: handlePublish,
+    onUnpublish: handleUnpublish,
     onQuit: handleQuit,
     onBrowse: handleBrowse,
     onNewSession: handleNewSession,
@@ -549,6 +667,13 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           onChatSubmit={handleChatSubmit}
           outputContent={outputContent}
           isOutputStreaming={isOutputStreaming}
+          publishStatus={publishStatus}
+          publishTitle={publishPayload.title}
+          publishSlug={publishPayload.slug}
+          publishExcerpt={publishPayload.excerpt}
+          publishDate={publishPayload.date}
+          publishTags={publishPayload.tags}
+          publishResult={publishResult}
         />
       </box>
 
