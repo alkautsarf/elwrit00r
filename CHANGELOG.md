@@ -4,6 +4,13 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.3] - 2026-03-25
+
+### Added
+
+- Accept polish output with `Space+a` — applies polished text directly to editor (full document or visual selection)
+- "Space+a to accept · Escape to dismiss" hint shown in AI pane after polish completes
+
 ## [0.3.2] - 2026-03-07
 
 ### Fixed
@@ -77,6 +84,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.3.3]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.3
 [0.3.2]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.2
 [0.3.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.1
 [0.3.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.0
