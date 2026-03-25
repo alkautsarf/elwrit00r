@@ -12,7 +12,7 @@ interface AiPaneProps {
   focused: boolean;
   mode: AiMode;
   vimMode: VimMode;
-  scrollRef: RefObject<ScrollBoxRenderable | null>;
+  scrollRef: RefObject<ScrollBoxRenderable>;
   // Chat state (discuss)
   chatMessages: ChatMessage[];
   chatStreamingContent: string;

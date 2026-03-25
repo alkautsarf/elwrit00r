@@ -13,7 +13,7 @@ interface ChatViewProps {
   isStreaming: boolean;
   inputFocused: boolean;
   onSubmit: (text: string) => void;
-  scrollRef: RefObject<ScrollBoxRenderable | null>;
+  scrollRef: RefObject<ScrollBoxRenderable>;
 }
 
 export function ChatView({

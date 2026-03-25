@@ -7,7 +7,7 @@ interface OutputViewProps {
   label: string;
   content: string;
   isStreaming: boolean;
-  scrollRef: RefObject<ScrollBoxRenderable | null>;
+  scrollRef: RefObject<ScrollBoxRenderable>;
   showAcceptHint?: boolean;
 }
 
