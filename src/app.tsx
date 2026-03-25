@@ -341,6 +341,22 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     setActivePane("editor");
   }, []);
 
+  const handleAcceptPolish = useCallback(() => {
+    if (aiMode !== "polish" || isOutputStreaming || !outputContent) return;
+
+    if (selectedTextRef.current === undefined) {
+      textareaRef.current?.setText(outputContent);
+    } else {
+      const full = getEditorContent();
+      const replaced = full.replace(selectedTextRef.current, outputContent);
+      textareaRef.current?.setText(replaced);
+    }
+
+    scheduleAutoSave();
+    setAiMode("idle");
+    setActivePane("editor");
+  }, [aiMode, isOutputStreaming, outputContent, getEditorContent, scheduleAutoSave]);
+
   const handleBrowse = useCallback(async () => {
     await flushIfModified();
     setAiMode("idle");
@@ -401,6 +417,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     textareaRef,
     onCommand: handleCommand,
     onReset: handleReset,
+    onAcceptPolish: handleAcceptPolish,
     onQuit: handleQuit,
     onBrowse: handleBrowse,
     onNewSession: handleNewSession,

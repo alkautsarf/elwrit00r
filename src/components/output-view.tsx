@@ -8,9 +8,10 @@ interface OutputViewProps {
   content: string;
   isStreaming: boolean;
   scrollRef: RefObject<ScrollBoxRenderable | null>;
+  showAcceptHint?: boolean;
 }
 
-export function OutputView({ label, content, isStreaming, scrollRef }: OutputViewProps) {
+export function OutputView({ label, content, isStreaming, scrollRef, showAcceptHint }: OutputViewProps) {
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       <scrollbox
@@ -35,6 +36,13 @@ export function OutputView({ label, content, isStreaming, scrollRef }: OutputVie
           )}
         </box>
       </scrollbox>
+      {showAcceptHint && (
+        <box style={{ padding: 1, justifyContent: "center" }}>
+          <text fg={theme.fgFaint}>
+            Space+a to accept · Escape to dismiss
+          </text>
+        </box>
+      )}
     </box>
   );
 }

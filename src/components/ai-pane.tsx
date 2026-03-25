@@ -64,6 +64,7 @@ export function AiPane({
           content={outputContent}
           isStreaming={isOutputStreaming}
           scrollRef={scrollRef}
+          showAcceptHint={mode === "polish" && !isOutputStreaming && !!outputContent}
         />
       );
     }

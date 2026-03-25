@@ -18,6 +18,7 @@ interface UseVimModeOptions {
   onToggleSidebar: () => void;
   onTitleFocus: () => void;
   onTitleBlur: () => void;
+  onAcceptPolish: () => void;
   onScroll: (amount: number, unit: ScrollUnit) => void;
   activePane: "editor" | "ai" | "sidebar";
   titleFocused: boolean;
@@ -30,6 +31,7 @@ export function useVimMode({
   onQuit,
   onBrowse,
   onNewSession,
+  onAcceptPolish,
   onPaneSwitch,
   onToggleSidebar,
   onTitleFocus,
@@ -71,6 +73,7 @@ export function useVimMode({
         case "d": onCommand("discuss"); break;
         case "r": onCommand("review"); break;
         case "p": onCommand("polish"); break;
+        case "a": onAcceptPolish(); break;
         case "n": onNewSession(); break;
         case "b": onBrowse(); break;
       }
