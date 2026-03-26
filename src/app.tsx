@@ -7,7 +7,7 @@ import { Editor } from "./components/editor";
 import { AiPane, type AiMode } from "./components/ai-pane";
 import { type PublishStatus } from "./components/publish-view";
 import { loadConfig, getPublishConfig } from "./lib/config";
-import { buildPayload, publishPost, unpublishPost } from "./lib/publish";
+import { buildPayload, publishPost, unpublishPost, processImages, getApiKey } from "./lib/publish";
 import { StatusBar } from "./components/status-bar";
 import { FileBrowser } from "./components/file-browser";
 import { Sidebar } from "./components/sidebar";
@@ -376,10 +376,21 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           setPublishResult("No publish config found. Check ~/.config/elwrit00r/config.json");
           return;
         }
+        const rawBody = getEditorContent();
+        const slug = basename(currentFileRef.current ?? "", ".md");
+
+        // Upload local images to Blob and replace paths with URLs
+        let processedBody = rawBody;
+        try {
+          processedBody = await processImages(rawBody, pubConfig, getApiKey(pubConfig), slug);
+        } catch {
+          // Continue with original body if image processing fails
+        }
+
         const payload = buildPayload(
           currentFileRef.current ?? "",
           title,
-          getEditorContent(),
+          processedBody,
           publishPayload.tags,
         );
         const result = await publishPost(pubConfig, payload);
@@ -473,6 +484,16 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     setActivePane("ai");
   }, [aiMode, publishStatus, handleConfirmUnpublish]);
 
+  const handleCheatsheet = useCallback(() => {
+    setAiMode("cheatsheet");
+    setActivePane("ai");
+  }, []);
+
+  const handlePreview = useCallback(() => {
+    setAiMode("preview");
+    setActivePane("ai");
+  }, []);
+
   const handleBrowse = useCallback(async () => {
     await flushIfModified();
     setAiMode("idle");
@@ -531,11 +552,14 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
 
   const { mode, pendingKey } = useVimMode({
     textareaRef,
+    titleInputRef,
     onCommand: handleCommand,
     onReset: handleReset,
     onAcceptPolish: handleAcceptPolish,
     onPublish: handlePublish,
     onUnpublish: handleUnpublish,
+    onCheatsheet: handleCheatsheet,
+    onPreview: handlePreview,
     onQuit: handleQuit,
     onBrowse: handleBrowse,
     onNewSession: handleNewSession,
@@ -674,6 +698,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           publishDate={publishPayload.date}
           publishTags={publishPayload.tags}
           publishResult={publishResult}
+          previewContent={getEditorContent()}
         />
       </box>
 

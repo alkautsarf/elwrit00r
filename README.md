@@ -74,8 +74,14 @@ exec bun run "$ELW_DIR/src/index.tsx" "$@"
 | Editor  | Spc+a     | Accept polish       |
 | Editor  | Spc+P     | Publish to site     |
 | Editor  | Spc+U     | Unpublish from site |
+| Editor  | Spc+v     | Markdown preview    |
+| Editor  | Spc+,     | Markdown cheat sheet|
 | Editor  | Spc+n     | New AI session      |
 | Editor  | Spc+b     | Back to browser     |
+| Title   | h/l       | Cursor left/right   |
+| Title   | w/b       | Word forward/back   |
+| Title   | 0/$       | Line start/end      |
+| Title   | x         | Delete character    |
 | Editor  | q         | Quit                |
 
 ## Publishing
@@ -179,6 +185,17 @@ Both endpoints should accept `Authorization: Bearer <api-key>` header.
 5. Escape to cancel at any point
 
 To update a published post, edit and Spc+P again (upsert by slug). To remove, Spc+U.
+
+### Images
+
+Embed images with local file paths in your writing:
+
+```
+![my screenshot](~/Desktop/screenshot.png)
+![diagram](/Users/me/docs/arch.png)
+```
+
+On publish, local images are automatically uploaded to Vercel Blob and the paths replaced with CDN URLs. Your local file stays untouched. Paths starting with `http://` or `https://` are left as-is.
 
 ## Stack
 

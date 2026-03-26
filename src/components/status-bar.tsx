@@ -30,7 +30,7 @@ export function StatusBar({ mode, wpm, wordCount, elapsed, aiPaneVisible, fileNa
   if (!aiPaneVisible && mode === "normal") {
     centerText = noAi
       ? "spc: b browse"
-      : "spc: d discuss  r review  p polish  a accept  P publish  U unpublish  b browse";
+      : "spc: d discuss  r review  p polish  a accept  P publish  U unpublish  v preview  , help  b browse";
   }
 
   // Right side: filename + save indicator

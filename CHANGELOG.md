@@ -4,6 +4,20 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2026-03-26
+
+### Added
+
+- Auto-upload local images on publish — `![alt](/path/to/image.png)` uploads to Vercel Blob and replaces with URL
+- Markdown preview with `Space+v` — renders current writing as markdown in the AI pane
+- Markdown cheat sheet with `Space+,` — syntax reference with rendered examples
+- Vim navigation in title field — `h/l/w/b/0/$/x` work in normal mode
+
+### Fixed
+
+- Tags not parsed from review output (stale closure in publish dependency array)
+- Tag parsing strips backticks, hashtags, and formatting characters from Claude's output
+
 ## [0.4.0] - 2026-03-25
 
 ### Added
@@ -107,6 +121,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.5.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.5.0
 [0.4.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.4.0
 [0.3.4]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.4
 [0.3.3]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.3

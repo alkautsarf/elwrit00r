@@ -1,8 +1,10 @@
 import { execSync } from "node:child_process";
-import { basename } from "node:path";
+import { readFile } from "node:fs/promises";
+import { basename, resolve, extname } from "node:path";
+import { homedir } from "node:os";
 import type { PublishConfig } from "./config";
 
-function getApiKey(config: PublishConfig): string {
+export function getApiKey(config: PublishConfig): string {
   // 1. Direct key in config
   if (config.apiKey) return config.apiKey;
 
@@ -64,6 +66,71 @@ export function buildPayload(
     date: new Date().toISOString().split("T")[0],
     tags: tags ?? [],
   };
+}
+
+async function uploadImage(
+  config: PublishConfig,
+  apiKey: string,
+  localPath: string,
+  slug: string,
+): Promise<string> {
+  // Resolve ~ and relative paths
+  const resolved = localPath.startsWith("~")
+    ? resolve(homedir(), localPath.slice(2))
+    : resolve(localPath);
+
+  const ext = extname(resolved) || ".png";
+  const fileName = `${slug}-${Date.now()}${ext}`;
+  const fileData = await readFile(resolved);
+  const file = new File([new Uint8Array(fileData)], fileName);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("pathname", `writing/${fileName}`);
+
+  // Derive upload URL from the config URL (sibling to /publish)
+  const uploadUrl = config.url.replace(/\/writing$/, "") + "/upload";
+
+  const res = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Image upload failed: HTTP ${res.status}`);
+  }
+
+  const result = await res.json() as { ok: boolean; url: string };
+  return result.url;
+}
+
+export async function processImages(
+  body: string,
+  config: PublishConfig,
+  apiKey: string,
+  slug: string,
+): Promise<string> {
+  // Match ![alt](path) or ![alt]('path') or ![alt]("path")
+  const imageRegex = /!\[([^\]]*)\]\(['"]?([^'")\n]+)['"]?\)/g;
+  let processed = body;
+  const matches = [...body.matchAll(imageRegex)];
+
+  for (const match of matches) {
+    const [fullMatch, alt, rawPath] = match;
+    const path = rawPath.trim();
+    // Skip URLs — only upload local paths
+    if (path.startsWith("http://") || path.startsWith("https://")) continue;
+
+    try {
+      const blobUrl = await uploadImage(config, apiKey, path, slug);
+      processed = processed.replace(fullMatch, `![${alt}](${blobUrl})`);
+    } catch {
+      // Leave the original path if upload fails
+    }
+  }
+
+  return processed;
 }
 
 export async function publishPost(

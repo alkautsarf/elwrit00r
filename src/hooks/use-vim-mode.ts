@@ -9,6 +9,7 @@ type ScrollUnit = "line" | "viewport";
 
 interface UseVimModeOptions {
   textareaRef: RefObject<TextareaRenderable | null>;
+  titleInputRef: RefObject<TextareaRenderable | null>;
   onCommand: (command: AiCommand, selectedText?: string) => void;
   onReset: () => void;
   onQuit: () => void;
@@ -21,6 +22,8 @@ interface UseVimModeOptions {
   onAcceptPolish: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
+  onCheatsheet: () => void;
+  onPreview: () => void;
   onScroll: (amount: number, unit: ScrollUnit) => void;
   activePane: "editor" | "ai" | "sidebar";
   titleFocused: boolean;
@@ -28,6 +31,7 @@ interface UseVimModeOptions {
 
 export function useVimMode({
   textareaRef,
+  titleInputRef,
   onCommand,
   onReset,
   onQuit,
@@ -36,6 +40,8 @@ export function useVimMode({
   onAcceptPolish,
   onPublish,
   onUnpublish,
+  onCheatsheet,
+  onPreview,
   onPaneSwitch,
   onToggleSidebar,
   onTitleFocus,
@@ -84,6 +90,8 @@ export function useVimMode({
           if (key.shift) onUnpublish();
           break;
         case "a": onAcceptPolish(); break;
+        case ",": onCheatsheet(); break;
+        case "v": onPreview(); break;
         case "n": onNewSession(); break;
         case "b": onBrowse(); break;
       }
@@ -94,7 +102,16 @@ export function useVimMode({
     if (titleFocused) {
       if (mode === "normal") {
         key.preventDefault();
+        const ti = titleInputRef.current;
         switch (key.name) {
+          case "h": ti?.moveCursorLeft(); break;
+          case "l": ti?.moveCursorRight(); break;
+          case "w":
+          case "e": ti?.moveWordForward(); break;
+          case "b": ti?.moveWordBackward(); break;
+          case "0": ti?.gotoLineHome(); break;
+          case "$": ti?.gotoLineEnd(); break;
+          case "x": ti?.deleteChar(); break;
           case "j":
           case "return":
             onTitleBlur();
