@@ -17,6 +17,7 @@ interface FileBrowserProps {
   onOpen: (filePath: string) => void;
   onNew: () => void;
   onQuit: () => void;
+  onLearn: () => void;
 }
 
 function formatDate(d: Date): string {
@@ -32,7 +33,7 @@ function formatDate(d: Date): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function FileBrowser({ writingsDir, onOpen, onNew, onQuit }: FileBrowserProps) {
+export function FileBrowser({ writingsDir, onOpen, onNew, onQuit, onLearn }: FileBrowserProps) {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [cursor, setCursor] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
@@ -103,6 +104,9 @@ export function FileBrowser({ writingsDir, onOpen, onNew, onQuit }: FileBrowserP
       case "d":
         if (files[cursor]) setConfirmDelete(cursor);
         break;
+      case "l":
+        onLearn();
+        break;
       case "q":
         onQuit();
         break;
@@ -161,7 +165,9 @@ export function FileBrowser({ writingsDir, onOpen, onNew, onQuit }: FileBrowserP
         <text fg={theme.fgFaint}>{"open  "}</text>
         <text fg={theme.red}>d</text>
         <text fg={theme.fgFaint}>{"delete  "}</text>
-        <text fg={theme.fgFaint}>q quit</text>
+        <text fg={theme.fgFaint}>{"q quit  "}</text>
+        <text fg={theme.blue}>l</text>
+        <text fg={theme.fgFaint}> learn</text>
       </box>
     </box>
     </box>

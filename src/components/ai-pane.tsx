@@ -4,8 +4,11 @@ import { theme } from "../theme";
 import { ChatView, type ChatMessage } from "./chat-view";
 import { OutputView } from "./output-view";
 import { PublishView, type PublishStatus } from "./publish-view";
+import { LearnView, type LearnPhase } from "./learn-view";
 import { getMarkdownStyle } from "../lib/markdown-style";
 import type { VimMode } from "../hooks/use-vim-mode";
+import type { Lesson } from "../lib/course-content";
+import type { CourseProgress } from "../lib/course";
 
 const CHEATSHEET = [
   ["HEADINGS", ""],
@@ -32,7 +35,7 @@ const CHEATSHEET = [
   ["![alt](path)", "Image (local or URL)"],
 ];
 
-export type AiMode = "idle" | "discuss" | "whisper" | "review" | "polish" | "publish" | "cheatsheet" | "preview";
+export type AiMode = "idle" | "discuss" | "whisper" | "review" | "polish" | "publish" | "cheatsheet" | "preview" | "learn";
 
 interface AiPaneProps {
   visible: boolean;
@@ -58,6 +61,13 @@ interface AiPaneProps {
   publishResult: string;
   // Preview state
   previewContent: string;
+  // Learn state
+  learnPhase: LearnPhase;
+  learnLesson: Lesson | null;
+  learnFeedback: string;
+  isLearnStreaming: boolean;
+  learnProgress: CourseProgress;
+  learnSelectedIndex: number;
 }
 
 const modeLabels: Record<AiMode, string> = {
@@ -69,6 +79,7 @@ const modeLabels: Record<AiMode, string> = {
   publish: "Publish",
   cheatsheet: "Markdown",
   preview: "Preview",
+  learn: "Learn",
 };
 
 export function AiPane({
@@ -91,6 +102,12 @@ export function AiPane({
   publishTags,
   publishResult,
   previewContent,
+  learnPhase,
+  learnLesson,
+  learnFeedback,
+  isLearnStreaming,
+  learnProgress,
+  learnSelectedIndex,
 }: AiPaneProps) {
   function renderContent() {
     if (mode === "discuss") {
@@ -171,6 +188,19 @@ A [link](https://example.com) in a sentence.`;
             <markdown content={exampleMd} syntaxStyle={getMarkdownStyle()} conceal style={{ width: "100%" }} />
           </box>
         </scrollbox>
+      );
+    }
+    if (mode === "learn") {
+      return (
+        <LearnView
+          phase={learnPhase}
+          lesson={learnLesson}
+          feedback={learnFeedback}
+          isStreaming={isLearnStreaming}
+          progress={learnProgress}
+          selectedIndex={learnSelectedIndex}
+          scrollRef={scrollRef}
+        />
       );
     }
     if (mode === "preview") {

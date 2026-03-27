@@ -13,7 +13,6 @@ interface UseVimModeOptions {
   onCommand: (command: AiCommand, selectedText?: string) => void;
   onReset: () => void;
   onQuit: () => void;
-  onBrowse: () => void;
   onNewSession: () => void;
   onPaneSwitch: () => void;
   onToggleSidebar: () => void;
@@ -24,6 +23,8 @@ interface UseVimModeOptions {
   onUnpublish: () => void;
   onCheatsheet: () => void;
   onPreview: () => void;
+  onLearn: () => void;
+  onLearnBack: () => void;
   onScroll: (amount: number, unit: ScrollUnit) => void;
   activePane: "editor" | "ai" | "sidebar";
   titleFocused: boolean;
@@ -35,13 +36,15 @@ export function useVimMode({
   onCommand,
   onReset,
   onQuit,
-  onBrowse,
+
   onNewSession,
   onAcceptPolish,
   onPublish,
   onUnpublish,
   onCheatsheet,
   onPreview,
+  onLearn,
+  onLearnBack,
   onPaneSwitch,
   onToggleSidebar,
   onTitleFocus,
@@ -92,8 +95,9 @@ export function useVimMode({
         case "a": onAcceptPolish(); break;
         case ",": onCheatsheet(); break;
         case "v": onPreview(); break;
+        case "l": onLearn(); break;
         case "n": onNewSession(); break;
-        case "b": onBrowse(); break;
+        case "b": onLearnBack(); break;
       }
       return;
     }

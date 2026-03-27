@@ -4,6 +4,19 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] - 2026-03-27
+
+### Added
+
+- Interactive writing course with 36 lessons across 7 levels (Grammar, Sentences, Structure, Voice, Forms, Editing, Web Writing)
+- `Space+L` from editor or `l` from file browser to enter Learn mode
+- j/k navigation through lessons with cursor tracking
+- Exercise mode with editor buffer swap (saves your draft, loads exercise, restores after)
+- AI-powered feedback on exercises using Claude Opus 4.6
+- Progress saved locally at `~/.elwrit00r/course.json`
+- Gated levels — complete all lessons in a level to unlock the next
+- `Space+b` returns to course home from any lesson phase
+
 ## [0.5.0] - 2026-03-26
 
 ### Added
@@ -121,6 +134,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.6.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.0
 [0.5.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.5.0
 [0.4.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.4.0
 [0.3.4]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.3.4

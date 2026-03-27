@@ -6,8 +6,12 @@ import { resolve, basename } from "node:path";
 import { Editor } from "./components/editor";
 import { AiPane, type AiMode } from "./components/ai-pane";
 import { type PublishStatus } from "./components/publish-view";
+import { type LearnPhase } from "./components/learn-view";
 import { loadConfig, getPublishConfig } from "./lib/config";
 import { buildPayload, publishPost, unpublishPost, processImages, getApiKey } from "./lib/publish";
+import { loadProgress, saveProgress, type CourseProgress } from "./lib/course";
+import { getLessonById, getNextLesson, LEVELS, type Lesson } from "./lib/course-content";
+import { runExerciseFeedback } from "./ai/learn";
 import { StatusBar } from "./components/status-bar";
 import { FileBrowser } from "./components/file-browser";
 import { Sidebar } from "./components/sidebar";
@@ -91,6 +95,19 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   const [publishStatus, setPublishStatus] = useState<PublishStatus>(null);
   const [publishResult, setPublishResult] = useState("");
   const [publishPayload, setPublishPayload] = useState<{ title: string; slug: string; excerpt: string; date: string; tags: string[] }>({ title: "", slug: "", excerpt: "", date: "", tags: [] });
+
+  // Learn mode state
+  const [learnPhase, setLearnPhase] = useState<LearnPhase>("home");
+  const [learnLessonId, setLearnLessonId] = useState<string | null>(null);
+  const [learnFeedback, setLearnFeedback] = useState("");
+  const [isLearnStreaming, setIsLearnStreaming] = useState(false);
+  const [learnProgress, setLearnProgress] = useState<CourseProgress>({ completedLessons: [], currentLesson: null, lastSessionAt: null });
+  const [learnSelectedIndex, setLearnSelectedIndex] = useState(0);
+  const learnSelectedIndexRef = useRef(0);
+  const draftContentRef = useRef<string>("");
+  const draftTitleRef = useRef<string>("");
+  const draftFileRef = useRef<string | null>(null);
+  const isInExerciseRef = useRef(false);
 
   // Load initial content into textarea on mount
   useEffect(() => {
@@ -344,10 +361,22 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     [getEditorContent, noAi]
   );
 
+  // Learn mode — restore editor from exercise buffer
+  const restoreEditorFromExercise = useCallback(() => {
+    if (!isInExerciseRef.current) return;
+    isInExerciseRef.current = false;
+    currentFileRef.current = draftFileRef.current;
+    setTitle(draftTitleRef.current);
+    if (titleInputRef.current) titleInputRef.current.value = draftTitleRef.current;
+    if (textareaRef.current) textareaRef.current.setText(draftContentRef.current);
+    updateSaveStatus("saved");
+  }, [updateSaveStatus]);
+
   const handleReset = useCallback(() => {
+    if (isInExerciseRef.current) restoreEditorFromExercise();
     setAiMode("idle");
     setActivePane("editor");
-  }, []);
+  }, [restoreEditorFromExercise]);
 
   const handleAcceptPolish = useCallback(() => {
     if (aiMode !== "polish" || isOutputStreaming || !outputContent) return;
@@ -484,6 +513,105 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     setActivePane("ai");
   }, [aiMode, publishStatus, handleConfirmUnpublish]);
 
+  const handleLearn = useCallback(async () => {
+    if (aiMode === "learn") {
+      // Already in learn mode — advance phase
+      const lesson = learnLessonId ? getLessonById(learnLessonId) : null;
+
+      if (learnPhase === "home") {
+        const allLessons = LEVELS.flatMap((l) => l.lessons);
+        const selected = allLessons[learnSelectedIndexRef.current];
+        if (!selected) return;
+
+        // Check level is unlocked
+        const levelUnlocked = selected.level === 0 || LEVELS[selected.level - 1]?.lessons.every(
+          (l) => learnProgress.completedLessons.includes(l.id)
+        );
+        if (!levelUnlocked) return;
+        const isCompleted = learnProgress.completedLessons.includes(selected.id);
+        const nextLesson = getNextLesson(learnProgress.completedLessons);
+        const isNext = nextLesson?.id === selected.id;
+        if (!isCompleted && !isNext) return;
+
+        setLearnLessonId(selected.id);
+        setLearnPhase("concept");
+      } else if (learnPhase === "concept") {
+        setLearnPhase("example");
+      } else if (learnPhase === "example" && lesson) {
+        // Swap editor to exercise buffer
+        await flushIfModified();
+        draftContentRef.current = getEditorContent();
+        draftTitleRef.current = title;
+        draftFileRef.current = currentFileRef.current;
+        isInExerciseRef.current = true;
+        currentFileRef.current = null;
+        updateSaveStatus("saved");
+        setTitle(`Exercise: ${lesson.title}`);
+        if (titleInputRef.current) titleInputRef.current.value = `Exercise: ${lesson.title}`;
+        if (textareaRef.current) textareaRef.current.setText(lesson.exerciseText);
+        setLearnPhase("exercise");
+      } else if (learnPhase === "exercise" && lesson) {
+        // Submit exercise — get feedback
+        const attempt = getEditorContent();
+        setLearnFeedback("");
+        setIsLearnStreaming(true);
+        setLearnPhase("feedback");
+        restoreEditorFromExercise();
+        runExerciseFeedback(lesson, attempt, (chunk) => setLearnFeedback((prev) => prev + chunk))
+          .catch(() => setLearnFeedback("Error getting feedback."))
+          .finally(() => setIsLearnStreaming(false));
+      } else if (learnPhase === "feedback") {
+        // Mark complete and return to home
+        const updated = {
+          ...learnProgress,
+          completedLessons: learnProgress.completedLessons.includes(learnLessonId!)
+            ? learnProgress.completedLessons
+            : [...learnProgress.completedLessons, learnLessonId!],
+          currentLesson: null,
+          lastSessionAt: new Date().toISOString(),
+        };
+        setLearnProgress(updated);
+        saveProgress(updated);
+        setLearnLessonId(null);
+        setLearnPhase("home");
+      }
+      return;
+    }
+
+    // First entry — load progress and show home
+    const progress = await loadProgress();
+    setLearnProgress(progress);
+    setLearnPhase("home");
+    setLearnLessonId(null);
+    setLearnFeedback("");
+    // Set selected index to the next incomplete lesson
+    const allLessons = LEVELS.flatMap((l) => l.lessons);
+    const nextLesson = getNextLesson(progress.completedLessons);
+    const nextIdx = nextLesson ? allLessons.findIndex((l) => l.id === nextLesson.id) : 0;
+    const idx = Math.max(0, nextIdx);
+    setLearnSelectedIndex(idx);
+    learnSelectedIndexRef.current = idx;
+    setView("editor");
+    setAiMode("learn");
+    setActivePane("ai");
+  }, [aiMode, learnPhase, learnLessonId, learnProgress, flushIfModified, getEditorContent, title, updateSaveStatus, restoreEditorFromExercise]);
+
+  const handleLearnBack = useCallback(async () => {
+    // If in learn mode, go back to course home
+    if (aiMode === "learn" && learnPhase !== "home") {
+      if (isInExerciseRef.current) restoreEditorFromExercise();
+      setLearnLessonId(null);
+      setLearnPhase("home");
+      return;
+    }
+    // Otherwise, do the normal browse action
+    await flushIfModified();
+    setAiMode("idle");
+    setSidebarVisible(false);
+    setActivePane("editor");
+    setView("browser");
+  }, [aiMode, learnPhase, restoreEditorFromExercise, flushIfModified]);
+
   const handleCheatsheet = useCallback(() => {
     setAiMode("cheatsheet");
     setActivePane("ai");
@@ -543,12 +671,24 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
   }, []);
 
   const handleScroll = useCallback((amount: number, unit: "line" | "viewport") => {
+    // j/k on learn home navigates lessons instead of scrolling
+    if (aiMode === "learn" && learnPhase === "home" && unit === "line") {
+      const allLessons = LEVELS.flatMap((l) => l.lessons);
+      setLearnSelectedIndex((prev) => {
+        const next = Math.max(0, Math.min(allLessons.length - 1, prev + amount));
+        learnSelectedIndexRef.current = next;
+        return next;
+      });
+      // Scroll AI pane to keep cursor visible
+      aiScrollRef.current?.scrollBy(amount, "absolute");
+      return;
+    }
     if (unit === "viewport") {
       aiScrollRef.current?.scrollBy(amount, "viewport");
     } else {
       aiScrollRef.current?.scrollBy(amount * 3, "absolute");
     }
-  }, []);
+  }, [aiMode, learnPhase]);
 
   const { mode, pendingKey } = useVimMode({
     textareaRef,
@@ -560,8 +700,9 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
     onUnpublish: handleUnpublish,
     onCheatsheet: handleCheatsheet,
     onPreview: handlePreview,
+    onLearn: handleLearn,
     onQuit: handleQuit,
-    onBrowse: handleBrowse,
+    onLearnBack: handleLearnBack,
     onNewSession: handleNewSession,
     onPaneSwitch: handlePaneSwitch,
     onToggleSidebar: handleToggleSidebar,
@@ -638,6 +779,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           onOpen={handleBrowserOpen}
           onNew={handleBrowserNew}
           onQuit={() => { renderer.destroy(); process.exit(0); }}
+          onLearn={handleLearn}
         />
       </box>
     );
@@ -699,6 +841,12 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
           publishTags={publishPayload.tags}
           publishResult={publishResult}
           previewContent={getEditorContent()}
+          learnPhase={learnPhase}
+          learnLesson={learnLessonId ? getLessonById(learnLessonId) ?? null : null}
+          learnFeedback={learnFeedback}
+          isLearnStreaming={isLearnStreaming}
+          learnProgress={learnProgress}
+          learnSelectedIndex={learnSelectedIndex}
         />
       </box>
 

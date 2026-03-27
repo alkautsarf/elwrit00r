@@ -6,6 +6,7 @@ Terminal writing app with vim keybindings and AI companion. Built with [OpenTUI]
 
 - **Vim modal editing** -- Normal, Insert, and Visual modes with full cursor motions, yank/paste, and delete operations
 - **AI companion** -- Discuss ideas, review drafts, and polish writing with Claude, plus idle whispers that nudge you forward
+- **Learn mode** -- Interactive writing course with 36 lessons across 7 levels, from punctuation to web writing
 - **Accept polish** -- Apply polished text directly back to the editor with Spc+a
 - **Publish to your site** -- Publish and unpublish writing directly from the terminal via API
 - **No-AI mode** -- `--no-ai` flag for pure distraction-free writing without any AI features
@@ -60,6 +61,7 @@ exec bun run "$ELW_DIR/src/index.tsx" "$@"
 | Browser | Enter     | Open file           |
 | Browser | n         | New writing         |
 | Browser | d         | Delete (confirm)    |
+| Browser | l         | Learn mode          |
 | Browser | q         | Quit                |
 | Editor  | i/a/o     | Enter Insert mode   |
 | Editor  | Esc       | Back to Normal      |
@@ -74,15 +76,35 @@ exec bun run "$ELW_DIR/src/index.tsx" "$@"
 | Editor  | Spc+a     | Accept polish       |
 | Editor  | Spc+P     | Publish to site     |
 | Editor  | Spc+U     | Unpublish from site |
+| Editor  | Spc+l     | Learn mode          |
 | Editor  | Spc+v     | Markdown preview    |
 | Editor  | Spc+,     | Markdown cheat sheet|
 | Editor  | Spc+n     | New AI session      |
-| Editor  | Spc+b     | Back to browser     |
+| Editor  | Spc+b     | Back (learn/browser)|
 | Title   | h/l       | Cursor left/right   |
 | Title   | w/b       | Word forward/back   |
 | Title   | 0/$       | Line start/end      |
 | Title   | x         | Delete character    |
 | Editor  | q         | Quit                |
+
+## Publishing
+
+## Learning
+
+elwrit00r includes a 36-lesson interactive writing course. Press `l` from the file browser or `Spc+l` from the editor to start.
+
+**Levels:**
+- Level 0: Grammar & Punctuation (6 lessons)
+- Level 1: Sentence Craft (6 lessons)
+- Level 2: Paragraphs & Structure (6 lessons)
+- Level 3: Voice & Style (6 lessons)
+- Level 4: Writing Forms (6 lessons)
+- Level 5: Editing & Rewriting (3 lessons)
+- Level 6: Writing for the Web (3 lessons)
+
+Each lesson has concept, examples, an exercise, and AI-powered feedback. Levels are gated -- complete all lessons in a level to unlock the next. Progress is saved at `~/.elwrit00r/course.json`.
+
+**Navigation:** j/k to browse lessons, Spc+l to start/advance, Spc+b to go back, Escape to exit.
 
 ## Publishing
 
