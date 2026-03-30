@@ -4,6 +4,15 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.1] - 2026-03-30
+
+### Changed
+
+- Discuss agent upgraded with full tool access (Bash, Read, Grep, Glob, WebSearch, WebFetch) and browser integration via agent-browser
+- Tool activity displayed inline in chat as dimmed lines with `▶` prefix
+- SDK isolation with `settingSources: []` and `cleanEnv()` to prevent config interference
+- Escape now properly aborts in-flight discuss streams when closing the pane
+
 ## [0.6.0] - 2026-03-27
 
 ### Added
@@ -134,6 +143,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.6.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.1
 [0.6.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.0
 [0.5.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.5.0
 [0.4.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.4.0

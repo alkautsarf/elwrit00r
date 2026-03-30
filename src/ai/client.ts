@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
 
-const MODEL = "claude-opus-4-6";
+export const MODEL = "claude-opus-4-6";
 
 // In compiled binaries, import.meta.url points to $bunfs virtual filesystem
 // where cli.js doesn't exist. Find the system claude binary instead.
 const IS_COMPILED = import.meta.url.includes("$bunfs");
 
-function findClaudeBinary(): string | null {
+export function findClaudeBinary(): string | null {
   const local = join(homedir(), ".local", "bin", "claude");
   if (existsSync(local)) return local;
   try {
@@ -20,7 +20,7 @@ function findClaudeBinary(): string | null {
   return null;
 }
 
-const claudeCodePath = IS_COMPILED ? findClaudeBinary() : undefined;
+export const claudeCodePath = IS_COMPILED ? findClaudeBinary() : undefined;
 
 const BASE_OPTIONS = {
   model: MODEL,
@@ -127,4 +127,11 @@ export async function resumeQuery({
     },
   });
   return processStream(stream, onChunk, sessionId);
+}
+
+/** Return process.env without CLAUDECODE (avoids nested session detection). */
+export function cleanEnv(): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = { ...process.env };
+  delete env.CLAUDECODE;
+  return env;
 }

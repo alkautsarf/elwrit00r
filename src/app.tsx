@@ -18,11 +18,32 @@ import { Sidebar } from "./components/sidebar";
 import { useVimMode, type AiCommand } from "./hooks/use-vim-mode";
 import { useTypingStats } from "./hooks/use-typing-stats";
 import { useIdle } from "./hooks/use-idle";
-import { DiscussSession } from "./ai/discuss";
+import { DiscussSession, type DiscussEvent } from "./ai/discuss";
 import { triggerWhisper } from "./ai/whisper";
 import { runReview } from "./ai/review";
 import { runPolish } from "./ai/polish";
 import type { ChatMessage } from "./components/chat-view";
+
+function cleanToolDetail(toolName: string, rawInput: string): string {
+  let parsed: Record<string, unknown> | null = null;
+  try { parsed = JSON.parse(rawInput); } catch {}
+  if (!parsed) return rawInput.length > 80 ? rawInput.slice(0, 77) + "..." : rawInput;
+
+  switch (toolName) {
+    case "Bash": {
+      const cmd = String(parsed.command || "");
+      if (!cmd) break;
+      return cmd
+        .replace(/^agent-browser close 2>\/dev\/null;\s*/g, "")
+        .replace(/^export AGENT_BROWSER_CDP=\d+\s*&&\s*/g, "")
+        .replace(/^export AGENT_BROWSER_CDP=\d+\s*;\s*/g, "");
+    }
+    case "Read": return `read ${parsed.file_path || ""}`;
+    case "Grep": return `grep "${parsed.pattern || ""}" ${parsed.path || ""}`;
+    case "Glob": return `glob ${parsed.pattern || ""}`;
+  }
+  return rawInput.length > 80 ? rawInput.slice(0, 77) + "..." : rawInput;
+}
 
 type Pane = "editor" | "ai" | "sidebar";
 type View = "browser" | "editor";
@@ -314,15 +335,36 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
         const content = title ? `# ${title}\n\n${body}` : body;
         const fullText = await discussRef.current.sendMessage(
           text,
-          (chunk) => setChatStreamingContent((prev) => prev + chunk),
-          content
+          (event: DiscussEvent) => {
+            switch (event.type) {
+              case "text":
+                setChatStreamingContent(event.content);
+                break;
+              case "tool_use":
+                // Flush any pending streaming text as an assistant message
+                setChatStreamingContent((prev) => {
+                  if (prev.trim()) {
+                    setChatMessages((msgs) => [...msgs, { role: "assistant", content: prev }]);
+                  }
+                  return "";
+                });
+                setChatMessages((msgs) => [
+                  ...msgs,
+                  { role: "tool", content: cleanToolDetail(event.toolName, event.content), toolName: event.toolName },
+                ]);
+                break;
+              case "error":
+                setChatMessages((msgs) => [...msgs, { role: "assistant", content: `Error: ${event.content}` }]);
+                break;
+            }
+          },
+          content,
         );
 
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: fullText },
-        ]);
         setChatStreamingContent("");
+        if (fullText.trim()) {
+          setChatMessages((prev) => [...prev, { role: "assistant", content: fullText }]);
+        }
       } catch (err) {
         setChatMessages((prev) => [
           ...prev,
@@ -330,6 +372,7 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
         ]);
       } finally {
         setIsChatStreaming(false);
+        setChatStreamingContent("");
       }
     },
     [isChatStreaming, getEditorContent, title]
@@ -374,6 +417,9 @@ export function App({ initialView, initialContent, filePath: initialFilePath, wr
 
   const handleReset = useCallback(() => {
     if (isInExerciseRef.current) restoreEditorFromExercise();
+    discussRef.current?.abort();
+    setIsChatStreaming(false);
+    setChatStreamingContent("");
     setAiMode("idle");
     setActivePane("editor");
   }, [restoreEditorFromExercise]);

@@ -3,8 +3,9 @@ import type { TextareaRenderable, ScrollBoxRenderable } from "@opentui/core";
 import { theme } from "../theme";
 
 interface ChatMessage {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool";
   content: string;
+  toolName?: string;
 }
 
 interface ChatViewProps {
@@ -57,6 +58,25 @@ export function ChatView({
     });
   }
 
+  const renderMessage = (msg: DisplayMessage, i: number) => {
+    if (msg.role === "tool") {
+      return (
+        <box key={i} style={{ flexDirection: "row", paddingLeft: 1 }}>
+          <text fg={theme.orange} style={{ flexShrink: 0 }}>{"▶ "}</text>
+          <text fg={theme.fgFaint}>{msg.content}</text>
+        </box>
+      );
+    }
+    return (
+      <box key={i} style={{ flexDirection: "column" }}>
+        <text fg={msg.role === "user" ? theme.blue : msg.faint ? theme.fgFaint : theme.fg}>
+          {msg.role === "user" ? "> " : ""}
+          {msg.content}
+        </text>
+      </box>
+    );
+  };
+
   return (
     <box style={{ flexDirection: "column", flexGrow: 1 }}>
       {/* Chat thread */}
@@ -67,14 +87,7 @@ export function ChatView({
         stickyStart="bottom"
       >
         <box style={{ flexDirection: "column", gap: 1, padding: 1 }}>
-          {displayMessages.map((msg, i) => (
-            <box key={i} style={{ flexDirection: "column" }}>
-              <text fg={msg.role === "user" ? theme.blue : msg.faint ? theme.fgFaint : theme.fg}>
-                {msg.role === "user" ? "> " : ""}
-                {msg.content}
-              </text>
-            </box>
-          ))}
+          {displayMessages.map(renderMessage)}
         </box>
       </scrollbox>
 

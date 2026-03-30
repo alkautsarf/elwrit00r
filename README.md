@@ -5,7 +5,7 @@ Terminal writing app with vim keybindings and AI companion. Built with [OpenTUI]
 ## Features
 
 - **Vim modal editing** -- Normal, Insert, and Visual modes with full cursor motions, yank/paste, and delete operations
-- **AI companion** -- Discuss ideas, review drafts, and polish writing with Claude, plus idle whispers that nudge you forward
+- **AI companion** -- Discuss ideas with a research-capable agent (reads files, browses the web via agent-browser), review drafts, polish writing, plus idle whispers that nudge you forward
 - **Learn mode** -- Interactive writing course with 36 lessons across 7 levels, from punctuation to web writing
 - **Accept polish** -- Apply polished text directly back to the editor with Spc+a
 - **Publish to your site** -- Publish and unpublish writing directly from the terminal via API
@@ -21,7 +21,7 @@ Terminal writing app with vim keybindings and AI companion. Built with [OpenTUI]
 
 **Editor** -- Full-screen distraction-free writing with vim keybindings. Status bar shows mode, WPM, word count, and elapsed time.
 
-**AI pane** -- Side panel for discuss (multi-turn chat), review (structured feedback), and polish (rewrite) modes. Ctrl+U/D for half-page scroll, j/k when focused via Tab.
+**AI pane** -- Side panel for discuss (multi-turn chat with tool use and browser access), review (structured feedback), and polish (rewrite) modes. Tool activity shown inline as dimmed lines. Ctrl+U/D for half-page scroll, j/k when focused via Tab.
 
 ## Install
 
