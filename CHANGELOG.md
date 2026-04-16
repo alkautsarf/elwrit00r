@@ -4,6 +4,12 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.5] - 2026-04-16
+
+### Fixed
+
+- Re-sign darwin binaries with an adhoc code signature in CI — `bun build --compile` emits a malformed mach-o signature that macOS 26 (Tahoe) rejects, causing the brew-installed binary to SIGKILL on launch
+
 ## [0.6.4] - 2026-04-16
 
 ### Fixed
@@ -161,6 +167,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.6.5]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.5
 [0.6.4]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.4
 [0.6.3]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.3
 [0.6.2]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.2
