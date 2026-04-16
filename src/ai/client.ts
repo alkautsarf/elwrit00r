@@ -31,6 +31,7 @@ const BASE_OPTIONS = {
   includePartialMessages: true,
   thinking: { type: "adaptive" as const },
   effort: "high" as const,
+  settingSources: [] as const,
 };
 
 interface StreamOptions {

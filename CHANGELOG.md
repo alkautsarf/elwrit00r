@@ -4,6 +4,12 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.4] - 2026-04-16
+
+### Fixed
+
+- Set `settingSources: []` on shared SDK options so `~/.claude/settings.json` hooks no longer leak into elwrit00r's AI sessions (SDK 0.2.111 changed `options.env` from REPLACE to OVERLAY semantics)
+
 ## [0.6.3] - 2026-04-16
 
 ### Changed
@@ -155,6 +161,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.6.4]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.4
 [0.6.3]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.3
 [0.6.2]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.2
 [0.6.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.1
