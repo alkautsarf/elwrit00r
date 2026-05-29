@@ -4,6 +4,14 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] - 2026-05-29
+
+### Changed
+
+- Upgrade AI model from `claude-opus-4-7` to `claude-opus-4-8`
+- Resolve the model dynamically via `resolveModel()` with env override precedence `ELW_MODEL` > `S0NDER_MODEL` > built-in default, so future model bumps need no code change
+- Upgrade `@anthropic-ai/claude-agent-sdk` from `^0.2.111` to `^0.3.156` (typed `settingSources` as `SettingSource[]`)
+
 ## [0.6.5] - 2026-04-16
 
 ### Fixed
@@ -167,6 +175,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.7.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.7.0
 [0.6.5]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.5
 [0.6.4]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.4
 [0.6.3]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.3

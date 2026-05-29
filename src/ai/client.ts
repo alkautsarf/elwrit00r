@@ -1,10 +1,11 @@
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { query, type SettingSource } from "@anthropic-ai/claude-agent-sdk";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { execSync } from "node:child_process";
+import { resolveModel } from "./model";
 
-export const MODEL = "claude-opus-4-7";
+export const MODEL = resolveModel();
 
 // In compiled binaries, import.meta.url points to $bunfs virtual filesystem
 // where cli.js doesn't exist. Find the system claude binary instead.
@@ -31,7 +32,7 @@ const BASE_OPTIONS = {
   includePartialMessages: true,
   thinking: { type: "adaptive" as const },
   effort: "high" as const,
-  settingSources: [] as const,
+  settingSources: [] as SettingSource[],
 };
 
 interface StreamOptions {
