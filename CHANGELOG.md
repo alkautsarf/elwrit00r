@@ -4,6 +4,18 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.1] - 2026-09-23
+
+### Changed
+
+- Upgrade `@anthropic-ai/claude-agent-sdk` from `^0.3.156` to `0.3.280`. Its bundled Claude Code (2.1.280) knows `claude-opus-5-5` natively, so running from source on Opus 5.5 (`S0NDER_MODEL="claude-opus-5-5[1m]"`) no longer goes through a CLI that predates the model.
+
+### Fixed
+
+- The account's claude.ai connectors (Gmail, Drive, Calendar and others) no longer load into review, polish, whisper and discuss sessions. `settingSources: []` and `tools: []` did not stop the CLI from fetching them, and a connector's "needs authorization" notice was leaking into replies. `cleanEnv()` now sets `ENABLE_CLAUDEAI_MCP_SERVERS=false`, and the one-shot calls pass it too.
+- The discuss curl/wget guard now actually runs. It was a `canUseTool` callback, which `bypassPermissions` skips entirely, and SDK 0.3.198+ printed a warning about that over the TUI on every query. It is now a `PreToolUse` hook that matches curl/wget only in command position, so a real `curl https://...` is denied while `agent-browser open "https://curl.se"` or `grep -rn curl` still run. localhost and 127.0.0.1 stay allowed.
+- Discuss follow-up turns resume with the same system prompt and tools as the first turn. Before, a resumed turn got an empty system prompt (dropping the discuss persona and rules) and the CLI's full default toolset, and on Opus 5.5 a changed tool list between turns also discards the earlier reasoning.
+
 ## [0.7.0] - 2026-05-29
 
 ### Changed
@@ -175,6 +187,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.7.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.7.1
 [0.7.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.7.0
 [0.6.5]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.5
 [0.6.4]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.4

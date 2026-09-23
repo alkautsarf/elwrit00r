@@ -33,6 +33,7 @@ const BASE_OPTIONS = {
   thinking: { type: "adaptive" as const },
   effort: "high" as const,
   settingSources: [] as SettingSource[],
+  env: cleanEnv(),
 };
 
 interface StreamOptions {
@@ -131,9 +132,15 @@ export async function resumeQuery({
   return processStream(stream, onChunk, sessionId);
 }
 
-/** Return process.env without CLAUDECODE (avoids nested session detection). */
+/**
+ * Return process.env without CLAUDECODE (avoids nested session detection),
+ * with the account's claude.ai connectors (Gmail, Drive, Calendar, ...) turned
+ * off. settingSources: [] and tools: [] do not stop the CLI from loading them,
+ * and a connector's "needs authorization" notice was leaking into replies.
+ */
 export function cleanEnv(): Record<string, string | undefined> {
   const env: Record<string, string | undefined> = { ...process.env };
   delete env.CLAUDECODE;
+  env.ENABLE_CLAUDEAI_MCP_SERVERS = "false";
   return env;
 }

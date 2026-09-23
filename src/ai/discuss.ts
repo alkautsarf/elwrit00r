@@ -1,8 +1,34 @@
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { query, type HookCallback } from "@anthropic-ai/claude-agent-sdk";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { MODEL, claudeCodePath, cleanEnv } from "./client";
 import { PROMPTS } from "./prompts";
+
+/**
+ * Deny curl/wget to external hosts (the web goes through agent-browser).
+ * A PreToolUse hook, not canUseTool: under bypassPermissions the SDK approves
+ * every call before canUseTool is consulted, so a canUseTool guard never ran,
+ * and SDK >= 0.3.198 prints a CLAUDE_SDK_CAN_USE_TOOL_SHADOWED warning to
+ * stderr on every query, which lands on top of the TUI.
+ * Matches curl/wget only in command position (start, or after ; & | ( ` $( ),
+ * so `agent-browser open "https://curl.se"` or `grep -rn curl` still run.
+ */
+const FETCH_CMD = /(?:^|[;&|(`]|\$\()\s*(?:sudo\s+)?(?:curl|wget)\b/i;
+
+const blockExternalFetch: HookCallback = async (input) => {
+  if (input.hook_event_name !== "PreToolUse") return {};
+  const cmd = String((input.tool_input as { command?: unknown } | null)?.command ?? "");
+  if (FETCH_CMD.test(cmd) && !cmd.includes("127.0.0.1") && !cmd.includes("localhost")) {
+    return {
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: "Use agent-browser to access the web, not curl/wget.",
+      },
+    };
+  }
+  return {};
+};
 
 export type DiscussEvent =
   | { type: "text"; content: string }
@@ -41,23 +67,18 @@ export class DiscussSession {
       effort: "high",
       settingSources: [],
       disallowedTools: ["Write", "Edit", "NotebookEdit"],
-      canUseTool: (toolName: string, input: Record<string, unknown>) => {
-        if (toolName === "Bash") {
-          const cmd = String(input.command || "");
-          if (/\b(curl|wget)\b/i.test(cmd) && !cmd.includes("127.0.0.1") && !cmd.includes("localhost")) {
-            return { behavior: "deny" as const, message: "Use agent-browser to access the web, not curl/wget." };
-          }
-        }
-        return { behavior: "allow" as const };
-      },
+      hooks: { PreToolUse: [{ matcher: "Bash", hooks: [blockExternalFetch] }] },
       ...(claudeCodePath ? { pathToClaudeCodeExecutable: claudeCodePath } : {}),
     };
 
+    // Same system prompt and tools on every turn: left unset on resume, the CLI
+    // falls back to an empty system prompt and its full default toolset, and
+    // on Opus 5.5 a changed tool list between turns discards earlier reasoning.
+    options.systemPrompt = PROMPTS.discuss;
+    options.tools = ["Bash", "Read", "Grep", "Glob", "WebSearch", "WebFetch"];
     if (isResume) {
       options.resume = this.sessionId;
     } else {
-      options.systemPrompt = PROMPTS.discuss;
-      options.tools = ["Bash", "Read", "Grep", "Glob", "WebSearch", "WebFetch"];
       options.persistSession = true;
     }
 
