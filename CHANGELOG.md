@@ -4,6 +4,12 @@ All notable changes to elwrit00r will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.2] - 2026-11-14
+
+### Changed
+
+- Built-in fallback model (used when neither `ELW_MODEL` nor `S0NDER_MODEL` is set) moved from `claude-opus-4-8` to `claude-opus-5-5`; the resolver comment now names `FALLBACK_MODEL` as the single place to bump it.
+
 ## [0.7.1] - 2026-09-23
 
 ### Changed
@@ -187,6 +193,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - WPM, word count, and elapsed time in status bar
 - Homebrew distribution via `brew tap alkautsarf/tap`
 
+[0.7.2]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.7.2
 [0.7.1]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.7.1
 [0.7.0]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.7.0
 [0.6.5]: https://github.com/alkautsarf/elwrit00r/releases/tag/v0.6.5
